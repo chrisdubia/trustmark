@@ -160,17 +160,13 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
               <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880", textAlign: "left", width: "100%", margin: 0, padding: 0 }}>{VERDICT_SUB[verdict]}</div>
             </div>
             {/* Fix 2: confidence + label + QR stacked with clear separation, no overlap */}
-            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0 }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0, marginBottom: 12 }}>
-                <div style={{ ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1, display: "block", marginBottom: 4, color: verdictColor }}>{confidence}%</div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", display: "block", marginTop: 4, lineHeight: 1 }}>Confidence</div>
+            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginLeft: "auto", gap: 8 }}>
+              <div style={{ display: "block", textAlign: "center", marginLeft: "auto", marginRight: "auto", lineHeight: 1, color: verdictColor, ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em" }}>{confidence}%</div>
+              <div style={{ display: "block", textAlign: "center", marginLeft: "auto", marginRight: "auto", lineHeight: 1, ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase" as const, color: "#B0ADA6" }}>Confidence</div>
+              <div style={{ display: "block", textAlign: "center", marginLeft: "auto", marginRight: "auto", width: 72, height: 72, border: "1px solid #D8D5CE", background: "#fff", padding: 4 }}>
+                <QRCode value={verifyUrl} size={64} bgColor="#ffffff" fgColor="#1C1C1A" level="M" />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <div style={{ width: 72, height: 72, border: "1px solid #D8D5CE", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}>
-                  <QRCode value={verifyUrl} size={64} bgColor="#ffffff" fgColor="#1C1C1A" level="M" />
-                </div>
-                <div style={{ ...mono, fontSize: 7, color: "#B0ADA6", letterSpacing: "0.06em", textAlign: "center" }}>Scan to verify</div>
-              </div>
+              <div style={{ display: "block", textAlign: "center", marginLeft: "auto", marginRight: "auto", ...mono, fontSize: 7, color: "#B0ADA6", letterSpacing: "0.06em" }}>Scan to verify</div>
             </div>
           </div>
 
