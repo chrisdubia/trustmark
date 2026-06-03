@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import type { VerificationResult } from "@/lib/types";
 import ELAViewer from "./ELAViewer";
@@ -12,59 +13,39 @@ interface ResultCardProps {
 
 const VERDICT_CONFIG = {
   VERIFIED: {
-    icon: "✓",
-    label: "VERIFIED",
-    sublabel: "This media is authentic",
-    color: "text-green-400",
-    bg: "bg-green-500/10",
-    border: "border-green-500/30",
-    glow: "shadow-green-500/20",
-    barColor: "bg-green-400",
+    color: "#6B8F4E",
+    title: "This media is authentic",
+    subtitle: "Consistent with a real camera capture. No manipulation detected.",
   },
   MODIFIED: {
-    icon: "⚠",
-    label: "MODIFIED",
-    sublabel: "This media has been altered",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/30",
-    glow: "shadow-amber-500/20",
-    barColor: "bg-amber-400",
+    color: "#C4882A",
+    title: "This media has been altered",
+    subtitle: "Evidence of post-processing, editing, or stripped provenance detected.",
   },
   SYNTHETIC: {
-    icon: "✕",
-    label: "SYNTHETIC",
-    sublabel: "This media cannot be verified",
-    color: "text-red-400",
-    bg: "bg-red-500/10",
-    border: "border-red-500/30",
-    glow: "shadow-red-500/20",
-    barColor: "bg-red-400",
+    color: "#B85050",
+    title: "AI-generated content",
+    subtitle: "High probability this media was created by an AI generator.",
   },
   UNKNOWN: {
-    icon: "?",
-    label: "UNKNOWN",
-    sublabel: "Authenticity cannot be determined",
-    color: "text-gray-400",
-    bg: "bg-gray-500/10",
-    border: "border-gray-500/30",
-    glow: "shadow-gray-500/20",
-    barColor: "bg-gray-400",
+    color: "#8A8880",
+    title: "Authenticity undetermined",
+    subtitle: "Insufficient signals to make a confident determination.",
   },
 };
 
-const STATUS_COLORS = {
-  pass: "text-green-400",
-  warn: "text-amber-400",
-  fail: "text-red-400",
-  info: "text-blue-400",
+const STATUS_ICONS: Record<string, string> = {
+  pass: "+",
+  warn: "!",
+  fail: "×",
+  info: "·",
 };
 
-const STATUS_ICONS = {
-  pass: "✓",
-  warn: "⚠",
-  fail: "✕",
-  info: "ℹ",
+const STATUS_COLORS: Record<string, string> = {
+  pass: "#6B8F4E",
+  warn: "#C4882A",
+  fail: "#B85050",
+  info: "#B0ADA6",
 };
 
 function formatBytes(bytes: number): string {
@@ -85,21 +66,35 @@ function formatDate(iso: string | null): string | null {
   }
 }
 
-function Row({ label, value, href, mono }: {
-  label: string; value: string; href?: string; mono?: boolean
-}) {
+const monoStyle = {
+  fontFamily: "'DM Mono', monospace",
+} as const;
+
+const epilogueStyle = {
+  fontFamily: "'Epilogue', sans-serif",
+} as const;
+
+function DataRow({ label, value, href }: { label: string; value: string; href?: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-3 border-b border-white/5 last:border-0">
-      <span className="text-sm text-white/40 shrink-0 w-36">{label}</span>
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      padding: "9px 0",
+      borderBottom: "1px solid #EBEBE5",
+      gap: 12,
+    }}>
+      <span style={{ ...monoStyle, fontSize: 10, textTransform: "uppercase" as const, color: "#B0ADA6", letterSpacing: "0.08em", flexShrink: 0 }}>
+        {label}
+      </span>
       {href ? (
         <a
           href={href} target="_blank" rel="noopener noreferrer"
-          className="text-sm text-blue-400 hover:text-blue-300 text-right break-all"
+          style={{ ...monoStyle, fontSize: 11, color: "#4A7A9B", textAlign: "right" as const, wordBreak: "break-all" as const, textDecoration: "none" }}
         >
           {value} ↗
         </a>
       ) : (
-        <span className={`text-sm text-white/80 text-right break-all ${mono ? "font-mono text-xs" : ""}`}>
+        <span style={{ ...monoStyle, fontSize: 11, color: "#1C1C1A", textAlign: "right" as const, wordBreak: "break-all" as const }}>
           {value}
         </span>
       )}
@@ -107,23 +102,65 @@ function Row({ label, value, href, mono }: {
   );
 }
 
-function Section({ title, subtitle, children }: {
-  title: string; subtitle?: string; children: React.ReactNode
-}) {
+function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="glass rounded-xl p-5">
-      <div className="mb-3">
-        <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest">{title}</h3>
-        {subtitle && <p className="text-xs text-white/20 mt-0.5">{subtitle}</p>}
-      </div>
-      <div>{children}</div>
+    <div style={{ ...monoStyle, fontSize: 9, textTransform: "uppercase" as const, letterSpacing: "0.18em", color: "#B0ADA6", marginBottom: 16 }}>
+      {children}
     </div>
   );
 }
 
+function RightSectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ ...monoStyle, fontSize: 9, textTransform: "uppercase" as const, letterSpacing: "0.18em", color: "#A8A59E", marginBottom: 12 }}>
+      {children}
+    </div>
+  );
+}
+
+function RightDataRow({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", gap: 8 }}>
+      <span style={{ ...monoStyle, fontSize: 10, color: "#B0ADA6" }}>{label}</span>
+      <span style={{ ...monoStyle, fontSize: 11, color: valueColor ?? "#1C1C1A", textAlign: "right" as const }}>{value}</span>
+    </div>
+  );
+}
+
+const btnBase: React.CSSProperties = {
+  ...monoStyle,
+  fontSize: 9,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+  padding: "10px 16px",
+  borderRadius: 2,
+  cursor: "pointer",
+  width: "100%",
+  textAlign: "center",
+  textDecoration: "none",
+  display: "block",
+  boxSizing: "border-box",
+  transition: "background 0.15s, color 0.15s, border-color 0.15s",
+};
+
+const btnOutline: React.CSSProperties = {
+  ...btnBase,
+  border: "1px solid #D8D5CE",
+  background: "transparent",
+  color: "#1C1C1A",
+};
+
+const btnSolid: React.CSSProperties = {
+  ...btnBase,
+  border: "1px solid #1C1C1A",
+  background: "#1C1C1A",
+  color: "#F2F0EB",
+};
+
 export default function ResultCard({ result, previewUrl, onReset }: ResultCardProps) {
   const cfg = VERDICT_CONFIG[result.verdict];
   const { exif, c2pa, aiDetection, forensics, fileInfo, confidence } = result;
+  const [copied, setCopied] = useState(false);
 
   const mapsUrl = exif?.gps
     ? `https://maps.google.com/?q=${exif.gps.lat},${exif.gps.lon}`
@@ -131,9 +168,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
 
   const shareUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/verify/${result.id}`;
 
-  const copyLink = () => navigator.clipboard.writeText(shareUrl);
-
-  const shareText = `I verified this media with TrustMark — verdict: ${result.verdict}. ${shareUrl}`;
+  const hasExif = !!(exif?.make || exif?.model || exif?.dateTimeOriginal || exif?.gps);
 
   const originLabels: Record<string, string> = {
     camera: "Real camera capture",
@@ -143,276 +178,561 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
     unknown: "Unknown origin",
   };
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const keyFindings = forensics?.signals
+    .filter((s) => s.status === "pass" || s.status === "fail" || s.status === "warn")
+    .slice(0, 3)
+    .map((s) => `• ${s.label}: ${s.detail}`)
+    .join("\n") ?? "";
+
+  const emailBody = [
+    `TrustMark Verification Result`,
+    ``,
+    `Verdict: ${result.verdict}`,
+    `Confidence: ${confidence}%`,
+    `File: ${fileInfo.name}`,
+    ``,
+    keyFindings ? `Key Findings:\n${keyFindings}` : "",
+    ``,
+    `View full report: ${shareUrl}`,
+  ].filter((l) => l !== undefined).join("\n");
+
+  const copyAsText = () => {
+    const lines = [
+      `TRUSTMARK VERIFICATION REPORT`,
+      `================================`,
+      `Verdict: ${result.verdict}`,
+      `Confidence: ${confidence}%`,
+      ``,
+      `File: ${fileInfo.name}`,
+      `Size: ${formatBytes(fileInfo.size)}`,
+      `Type: ${fileInfo.type}`,
+      `SHA-256: ${fileInfo.hash}`,
+      ``,
+      `Forensic Signals:`,
+      ...(forensics?.signals.map((s) => `  [${s.status.toUpperCase()}] ${s.label}: ${s.detail}`) ?? []),
+      ``,
+      hasExif ? [
+        `Capture Information:`,
+        exif?.make || exif?.model ? `  Device: ${[exif?.make, exif?.model].filter(Boolean).join(" ")}` : null,
+        exif?.dateTimeOriginal ? `  Captured: ${formatDate(exif.dateTimeOriginal)}` : null,
+        exif?.gps ? `  GPS: ${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}` : null,
+      ].filter(Boolean).join("\n") : null,
+      ``,
+      `AI Detection:`,
+      `  Probability: ${Math.round((aiDetection?.score ?? 0) * 100)}%`,
+      ...(aiDetection?.signals.map((s) => `  ${s.name}: ${s.detected ? "Detected" : "Not detected"}`) ?? []),
+      ``,
+      `C2PA Provenance:`,
+      `  Manifest: ${c2pa?.hasCertificate ? "Present" : "None"}`,
+      `  Valid: ${c2pa?.valid ? "Yes" : "No"}`,
+      ``,
+      `Verification URL: ${shareUrl}`,
+      `Verified at: ${formatDate(result.verifiedAt) ?? result.verifiedAt}`,
+    ].filter(Boolean).join("\n");
+
+    navigator.clipboard.writeText(lines);
+  };
+
+  const downloadPdf = async () => {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const W = 595;
+    let y = 40;
+
+    // Header
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("TrustMark", 40, y);
+    y += 20;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(160, 157, 150);
+    doc.text("trustmark-pearl.vercel.app · Stateless verification · No images stored", 40, y);
+    y += 24;
+
+    // Accent bar
+    const accentHex = cfg.color;
+    const r = parseInt(accentHex.slice(1, 3), 16);
+    const g = parseInt(accentHex.slice(3, 5), 16);
+    const b = parseInt(accentHex.slice(5, 7), 16);
+    doc.setFillColor(r, g, b);
+    doc.rect(40, y, 3, 48, "F");
+
+    // Verdict block
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(r, g, b);
+    doc.text(result.verdict, 52, y + 20);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(28, 28, 26);
+    doc.text(cfg.title, 52, y + 36);
+    doc.setFontSize(9);
+    doc.setTextColor(138, 136, 128);
+    doc.text(`Confidence: ${confidence}%`, 52, y + 50);
+    y += 72;
+
+    // File info
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(176, 173, 166);
+    doc.text("FILE INFORMATION", 40, y);
+    y += 14;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(28, 28, 26);
+    doc.setFontSize(9);
+    const fileLines = [
+      `Name: ${fileInfo.name}`,
+      `Size: ${formatBytes(fileInfo.size)}  ·  Type: ${fileInfo.type}`,
+      `SHA-256: ${fileInfo.hash}`,
+    ];
+    fileLines.forEach((line) => { doc.text(line, 40, y); y += 14; });
+    y += 8;
+
+    // Forensics
+    if (forensics && forensics.signals.length > 0) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(176, 173, 166);
+      doc.text("FORENSIC ANALYSIS", 40, y);
+      y += 14;
+      forensics.signals.forEach((s) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(28, 28, 26);
+        doc.text(`[${s.status.toUpperCase()}] ${s.label}`, 40, y);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(138, 136, 128);
+        const wrapped = doc.splitTextToSize(s.detail, W - 80);
+        wrapped.forEach((line: string) => { y += 12; doc.text(line, 48, y); });
+        y += 10;
+      });
+    }
+
+    // Capture info
+    if (hasExif) {
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(176, 173, 166);
+      doc.text("CAPTURE INFORMATION", 40, y);
+      y += 14;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(28, 28, 26);
+      if (exif?.make || exif?.model) { doc.text(`Device: ${[exif?.make, exif?.model].filter(Boolean).join(" ")}`, 40, y); y += 14; }
+      if (exif?.dateTimeOriginal) { doc.text(`Captured: ${formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal}`, 40, y); y += 14; }
+      if (exif?.gps) { doc.text(`GPS: ${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`, 40, y); y += 14; }
+      y += 4;
+    }
+
+    // AI Detection
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(176, 173, 166);
+    doc.text("AI DETECTION", 40, y);
+    y += 14;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(28, 28, 26);
+    doc.text(`AI Probability: ${Math.round((aiDetection?.score ?? 0) * 100)}%`, 40, y);
+    y += 14;
+
+    // C2PA
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(176, 173, 166);
+    doc.text("C2PA PROVENANCE", 40, y);
+    y += 14;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(28, 28, 26);
+    doc.text(`Manifest: ${c2pa?.hasCertificate ? "Present" : "None"}  ·  Valid: ${c2pa?.valid ? "Yes" : "No"}`, 40, y);
+    y += 20;
+
+    // Footer
+    doc.setFontSize(7);
+    doc.setTextColor(160, 157, 150);
+    doc.text(`Verification URL: ${shareUrl}`, 40, y);
+    y += 12;
+    doc.text(`Generated: ${formatDate(result.verifiedAt) ?? result.verifiedAt}  ·  Processing: ${result.processingMs} ms`, 40, y);
+    y += 12;
+    doc.text("Generated by TrustMark · trustmark-pearl.vercel.app · Stateless verification · No images stored", 40, y);
+
+    doc.save(`trustmark-${result.verdict.toLowerCase()}-${fileInfo.name}.pdf`);
+  };
+
+  const tweetText = `I verified this image using @TrustMark. Verdict: ${result.verdict} (${confidence}% confidence). ${shareUrl}`;
+
+  const aiScore = Math.round((aiDetection?.score ?? 0) * 100);
+  const aiColor = aiScore > 60 ? "#B85050" : aiScore > 20 ? "#C4882A" : "#6B8F4E";
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
-      className="w-full space-y-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+      style={{ width: "100%" }}
     >
-      {/* Verdict hero */}
-      <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        className={[
-          "rounded-2xl border p-8 text-center",
-          `shadow-2xl ${cfg.glow}`,
-          cfg.bg, cfg.border,
-        ].join(" ")}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 340px",
+          minHeight: 580,
+        }}
+        className="result-grid"
       >
-        <div className={`text-7xl font-black mb-2 ${cfg.color}`}>{cfg.icon}</div>
-        <h2 className={`text-4xl font-black tracking-tight ${cfg.color}`}>{cfg.label}</h2>
-        <p className="text-white/50 mt-2 text-sm">{cfg.sublabel}</p>
+        {/* LEFT COLUMN */}
+        <div style={{ padding: 40, borderRight: "1px solid #D8D5CE" }}>
 
-        <div className="mt-6 max-w-xs mx-auto">
-          <div className="flex justify-between text-xs text-white/30 mb-2">
-            <span>Confidence</span>
-            <span className={`font-semibold ${cfg.color}`}>{confidence}%</span>
-          </div>
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${confidence}%` }}
-              transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-              className={`h-full rounded-full ${cfg.barColor}`}
-            />
-          </div>
-        </div>
-      </motion.div>
+          {/* Verdict block */}
+          <div style={{ borderBottom: "1px solid #D8D5CE", marginBottom: 32, paddingBottom: 32 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+              {/* Vertical bar */}
+              <div style={{
+                width: 3, height: 64,
+                background: cfg.color,
+                flexShrink: 0,
+                marginTop: 3,
+                borderRadius: 0,
+              }} />
 
-      {/* Preview */}
-      {previewUrl && (
-        <div className="glass rounded-2xl overflow-hidden">
-          <div className="relative w-full max-h-64 bg-black flex items-center justify-center overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={previewUrl} alt="Uploaded file preview" className="max-w-full max-h-64 object-contain" />
-            <div className={[
-              "absolute top-3 right-3 px-3 py-1.5 rounded-full",
-              "text-xs font-bold tracking-wide",
-              cfg.bg, cfg.border, cfg.color, "border",
-            ].join(" ")}>
-              {cfg.label}
-            </div>
-          </div>
-          <div className="px-5 py-3 flex items-center justify-between text-xs text-white/30">
-            <span>{fileInfo.name}</span>
-            <span>{formatBytes(fileInfo.size)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Forensics signals */}
-      {forensics && forensics.signals.length > 0 && (
-        <Section
-          title="Forensic Analysis"
-          subtitle={`Estimated origin: ${originLabels[forensics.estimatedOrigin]}`}
-        >
-          <div className="space-y-0">
-            {forensics.signals.map((signal) => (
-              <div
-                key={signal.id}
-                className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0"
-              >
-                <span className={`text-sm font-bold shrink-0 w-4 ${STATUS_COLORS[signal.status]}`}>
-                  {STATUS_ICONS[signal.status]}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${STATUS_COLORS[signal.status]}`}>
-                    {signal.label}
-                  </p>
-                  <p className="text-xs text-white/30 mt-0.5">{signal.detail}</p>
-                </div>
+              {/* Center */}
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  ...monoStyle,
+                  fontSize: 10,
+                  textTransform: "uppercase",
+                  color: cfg.color,
+                  letterSpacing: "0.18em",
+                  marginBottom: 8,
+                }}>{result.verdict}</div>
+                <div style={{
+                  ...epilogueStyle,
+                  fontWeight: 300,
+                  fontSize: 28,
+                  letterSpacing: "-0.02em",
+                  color: "#1C1C1A",
+                  marginBottom: 6,
+                }}>{cfg.title}</div>
+                <div style={{
+                  ...epilogueStyle,
+                  fontWeight: 300,
+                  fontSize: 13,
+                  color: "#8A8880",
+                  lineHeight: 1.5,
+                }}>{cfg.subtitle}</div>
               </div>
-            ))}
-          </div>
-        </Section>
-      )}
 
-      {/* ELA heatmap — images only */}
-      {previewUrl && fileInfo.type.startsWith("image/") && (
-        <ELAViewer imageUrl={previewUrl} />
-      )}
-
-      {/* Capture info */}
-      {(exif?.make || exif?.model || exif?.dateTimeOriginal || exif?.gps) && (
-        <Section title="Capture Info">
-          {(exif.make || exif.model) && (
-            <Row label="Device" value={[exif.make, exif.model].filter(Boolean).join(" ")} />
-          )}
-          {exif.lensModel && <Row label="Lens" value={exif.lensModel} />}
-          {exif.dateTimeOriginal && (
-            <Row label="Captured" value={formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal} />
-          )}
-          {exif.dateTimeModified && exif.dateTimeModified !== exif.dateTimeOriginal && (
-            <Row label="Last modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
-          )}
-          {exif.width && exif.height && (
-            <Row label="Resolution" value={`${exif.width} × ${exif.height} px`} />
-          )}
-          {(exif.aperture || exif.shutterSpeed || exif.iso || exif.focalLength) && (
-            <Row
-              label="Camera settings"
-              value={[
-                exif.focalLength ? `${exif.focalLength}mm` : null,
-                exif.aperture ? `f/${exif.aperture}` : null,
-                exif.shutterSpeed ?? null,
-                exif.iso ? `ISO ${exif.iso}` : null,
-              ].filter(Boolean).join("  ·  ")}
-            />
-          )}
-          {exif.gps && mapsUrl && (
-            <Row
-              label="GPS coordinates"
-              value={`${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`}
-              href={mapsUrl}
-            />
-          )}
-          {exif.altitude !== null && (
-            <Row label="Altitude" value={`${exif.altitude} m`} />
-          )}
-          {exif.software && <Row label="Software" value={exif.software} />}
-        </Section>
-      )}
-
-      {/* C2PA */}
-      <Section title="Provenance (C2PA)">
-        <Row label="Manifest present" value={c2pa?.hasCertificate ? "Yes" : "No"} />
-        <Row label="Signature valid" value={c2pa?.valid ? "Yes" : "No"} />
-        {c2pa?.issuer && <Row label="Issuer" value={c2pa.issuer} />}
-        {c2pa?.claimGenerator && <Row label="Claim generator" value={c2pa.claimGenerator} />}
-        {c2pa?.signingTime && (
-          <Row label="Signed at" value={formatDate(c2pa.signingTime) ?? c2pa.signingTime} />
-        )}
-        <Row label="Edit count" value={String(c2pa?.editCount ?? 0)} />
-        {(c2pa?.editHistory?.length ?? 0) > 0 && (
-          <div className="pt-3">
-            <p className="text-xs text-white/30 mb-2">Edit history</p>
-            <ul className="space-y-1">
-              {c2pa!.editHistory.map((e, i) => (
-                <li key={i} className="text-sm text-white/60 flex items-start gap-2">
-                  <span className="text-amber-400 shrink-0">→</span>
-                  <span>
-                    {e.action}
-                    {e.softwareAgent && <span className="text-white/30"> via {e.softwareAgent}</span>}
-                    {e.when && <span className="text-white/30"> · {formatDate(e.when) ?? e.when}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </Section>
-
-      {/* AI Detection */}
-      <Section title="AI Detection">
-        {aiDetection?.unavailable ? (
-          <p className="text-sm text-white/30 py-1">
-            AI detection unavailable — set <code className="text-white/50">HIVE_API_KEY</code> to enable
-          </p>
-        ) : (
-          <>
-            <div className="flex items-center justify-between py-3 border-b border-white/5">
-              <span className="text-sm text-white/40">AI probability</span>
-              <div className="flex items-center gap-3">
-                <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+              {/* Right: confidence */}
+              <div style={{ marginLeft: "auto", textAlign: "right", flexShrink: 0 }}>
+                <div style={{
+                  ...monoStyle,
+                  fontSize: 32,
+                  fontWeight: 300,
+                  color: cfg.color,
+                  letterSpacing: "-0.02em",
+                  lineHeight: 1,
+                  marginBottom: 4,
+                }}>{confidence}%</div>
+                <div style={{
+                  ...monoStyle,
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  color: "#B0ADA6",
+                  letterSpacing: "0.12em",
+                }}>Confidence</div>
+                {/* Bar */}
+                <div style={{
+                  width: 80, height: 2,
+                  background: "#D8D5CE",
+                  marginTop: 8,
+                  marginLeft: "auto",
+                  position: "relative",
+                  overflow: "hidden",
+                }}>
                   <motion.div
                     initial={{ width: 0 }}
-                    animate={{ width: `${(aiDetection?.score ?? 0) * 100}%` }}
-                    transition={{ delay: 0.4, duration: 0.5 }}
-                    className={`h-full rounded-full ${
-                      (aiDetection?.score ?? 0) > 0.6
-                        ? "bg-red-400"
-                        : (aiDetection?.score ?? 0) > 0.3
-                        ? "bg-amber-400"
-                        : "bg-green-400"
-                    }`}
+                    animate={{ width: `${confidence}%` }}
+                    transition={{ delay: 0.3, duration: 0.5, ease: "easeOut" }}
+                    style={{ position: "absolute", left: 0, top: 0, height: "100%", background: cfg.color }}
                   />
                 </div>
-                <span className="text-sm text-white/80 w-12 text-right">
-                  {Math.round((aiDetection?.score ?? 0) * 100)}%
-                </span>
               </div>
             </div>
-            {aiDetection?.signals.map((s, i) => (
-              <div key={i} className="flex items-start justify-between py-2 border-b border-white/5 last:border-0">
-                <span className="text-sm text-white/40">{s.name}</span>
-                <div className="text-right">
-                  <span className={`text-sm font-medium ${s.detected ? "text-red-400" : "text-green-400"}`}>
-                    {s.detected ? "Detected" : "Not detected"}
-                  </span>
-                  {s.detail && <p className="text-xs text-white/30 mt-0.5">{s.detail}</p>}
-                </div>
+          </div>
+
+          {/* Image block */}
+          {previewUrl && (
+            <div style={{ borderBottom: "1px solid #D8D5CE", marginBottom: 32, paddingBottom: 32 }}>
+              <div style={{
+                background: "#1C1C1A",
+                borderRadius: 2,
+                overflow: "hidden",
+                height: 180,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                position: "relative",
+              }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={previewUrl}
+                  alt="Uploaded file preview"
+                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" }}
+                />
+                <div style={{
+                  position: "absolute",
+                  top: 12,
+                  right: 12,
+                  ...monoStyle,
+                  fontSize: 9,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: cfg.color,
+                  background: "rgba(242,240,235,0.92)",
+                  padding: "4px 8px",
+                  borderRadius: 2,
+                }}>{result.verdict}</div>
               </div>
-            ))}
-            <Row
-              label="Detection source"
-              value={aiDetection?.provider === "hive" ? "Hive AI API" : "Local heuristics"}
-            />
-          </>
-        )}
-      </Section>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: 8,
+                ...monoStyle,
+                fontSize: 10,
+                color: "#B0ADA6",
+              }}>
+                <span>{fileInfo.name}</span>
+                <span>{formatBytes(fileInfo.size)} · {fileInfo.type}</span>
+              </div>
+            </div>
+          )}
 
-      {/* File fingerprint */}
-      <Section title="File Fingerprint">
-        <Row label="SHA-256" value={`${fileInfo.hash.slice(0, 16)}…${fileInfo.hash.slice(-8)}`} mono />
-        <Row label="Type" value={fileInfo.type} />
-        <Row label="Size" value={formatBytes(fileInfo.size)} />
-        <Row label="Verified at" value={formatDate(result.verifiedAt) ?? result.verifiedAt} />
-        <Row label="Processing time" value={`${result.processingMs} ms`} />
-      </Section>
+          {/* Forensic Analysis */}
+          {forensics && forensics.signals.length > 0 && (
+            <div style={{ borderBottom: "1px solid #D8D5CE", marginBottom: 28, paddingBottom: 28 }}>
+              <SectionHeader>Forensic Analysis</SectionHeader>
+              {forensics.signals.map((signal) => (
+                <div key={signal.id} style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
+                  <span style={{
+                    ...monoStyle,
+                    fontSize: 11,
+                    color: STATUS_COLORS[signal.status] ?? "#B0ADA6",
+                    flexShrink: 0,
+                    width: 12,
+                    lineHeight: 1,
+                    marginTop: 2,
+                  }}>
+                    {STATUS_ICONS[signal.status] ?? "·"}
+                  </span>
+                  <div>
+                    <div style={{ ...epilogueStyle, fontWeight: 400, fontSize: 13, color: "#1C1C1A", marginBottom: 2 }}>
+                      {signal.label}
+                    </div>
+                    <div style={{ ...monoStyle, fontSize: 10, color: "#A8A59E", letterSpacing: "0.04em" }}>
+                      {signal.detail}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
-      {/* Share */}
-      <div className="glass rounded-2xl p-5 space-y-4">
-        <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest">Share Verification</h3>
-        <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3">
-          <span className="text-sm text-white/40 flex-1 truncate">{shareUrl}</span>
-          <button
-            onClick={copyLink}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors shrink-0 font-medium"
-          >
-            Copy
-          </button>
+          {/* Capture Information */}
+          {hasExif && (
+            <div style={{ borderBottom: "1px solid #D8D5CE", marginBottom: 28, paddingBottom: 28 }}>
+              <SectionHeader>Capture Information</SectionHeader>
+              {(exif?.make || exif?.model) && (
+                <DataRow label="Device" value={[exif?.make, exif?.model].filter(Boolean).join(" ")} />
+              )}
+              {exif?.lensModel && <DataRow label="Lens" value={exif.lensModel} />}
+              {exif?.dateTimeOriginal && (
+                <DataRow label="Captured" value={formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal} />
+              )}
+              {exif?.dateTimeModified && exif.dateTimeModified !== exif.dateTimeOriginal && (
+                <DataRow label="Last modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
+              )}
+              {exif?.width && exif?.height && (
+                <DataRow label="Resolution" value={`${exif.width} × ${exif.height} px`} />
+              )}
+              {(exif?.aperture || exif?.shutterSpeed || exif?.iso || exif?.focalLength) && (
+                <DataRow
+                  label="Camera settings"
+                  value={[
+                    exif?.focalLength ? `${exif.focalLength}mm` : null,
+                    exif?.aperture ? `f/${exif.aperture}` : null,
+                    exif?.shutterSpeed ?? null,
+                    exif?.iso ? `ISO ${exif.iso}` : null,
+                  ].filter(Boolean).join("  ·  ")}
+                />
+              )}
+              {exif?.gps && mapsUrl && (
+                <DataRow
+                  label="GPS coordinates"
+                  value={`${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`}
+                  href={mapsUrl}
+                />
+              )}
+              {exif?.altitude !== null && exif?.altitude !== undefined && (
+                <DataRow label="Altitude" value={`${exif.altitude} m`} />
+              )}
+              {exif?.software && <DataRow label="Software" value={exif.software} />}
+            </div>
+          )}
+
+          {/* ELA Viewer — images only */}
+          {previewUrl && fileInfo.type.startsWith("image/") && (
+            <ELAViewer imageUrl={previewUrl} />
+          )}
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <a
-            href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1 min-w-[100px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-black hover:bg-zinc-900 border border-white/10 text-white transition-colors"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.911-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-            Post on X
-          </a>
-          <a
-            href={`https://wa.me/?text=${encodeURIComponent(shareText)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1 min-w-[100px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-green-600/20 hover:bg-green-600/30 border border-green-600/30 text-green-400 transition-colors"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-            WhatsApp
-          </a>
-          <a
-            href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex-1 min-w-[100px] flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-blue-700/20 hover:bg-blue-700/30 border border-blue-700/30 text-blue-400 transition-colors"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
-            </svg>
-            LinkedIn
-          </a>
+
+        {/* RIGHT PANEL */}
+        <div style={{ padding: "40px 32px", background: "#ECEAE4" }}>
+
+          {/* C2PA */}
+          <div style={{ borderBottom: "1px solid #D0CEC8", marginBottom: 24, paddingBottom: 24 }}>
+            <RightSectionHeader>Provenance (C2PA)</RightSectionHeader>
+            <RightDataRow
+              label="Manifest present"
+              value={c2pa?.hasCertificate ? "Yes" : "No"}
+              valueColor={c2pa?.hasCertificate ? "#6B8F4E" : "#B85050"}
+            />
+            <RightDataRow
+              label="Signature valid"
+              value={c2pa?.valid ? "Yes" : "No"}
+              valueColor={c2pa?.valid ? "#6B8F4E" : "#B85050"}
+            />
+            {c2pa?.issuer && <RightDataRow label="Issuer" value={c2pa.issuer} />}
+            {c2pa?.claimGenerator && <RightDataRow label="Claim generator" value={c2pa.claimGenerator} />}
+            {c2pa?.signingTime && (
+              <RightDataRow label="Signed at" value={formatDate(c2pa.signingTime) ?? c2pa.signingTime} />
+            )}
+            <RightDataRow label="Edit count" value={String(c2pa?.editCount ?? 0)} />
+            {(c2pa?.editHistory?.length ?? 0) > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ ...monoStyle, fontSize: 9, color: "#B0ADA6", marginBottom: 8 }}>Edit history</div>
+                {c2pa!.editHistory.map((e, i) => (
+                  <div key={i} style={{ ...monoStyle, fontSize: 10, color: "#8A8880", marginBottom: 6 }}>
+                    → {e.action}
+                    {e.softwareAgent && <span style={{ color: "#B0ADA6" }}> via {e.softwareAgent}</span>}
+                    {e.when && <span style={{ color: "#B0ADA6" }}> · {formatDate(e.when) ?? e.when}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* AI Detection */}
+          <div style={{ borderBottom: "1px solid #D0CEC8", marginBottom: 24, paddingBottom: 24 }}>
+            <RightSectionHeader>AI Detection</RightSectionHeader>
+            {aiDetection?.unavailable ? (
+              <div style={{ ...monoStyle, fontSize: 10, color: "#B0ADA6" }}>
+                AI detection unavailable — set HIVE_API_KEY to enable
+              </div>
+            ) : (
+              <>
+                <RightDataRow
+                  label="AI probability"
+                  value={`${aiScore}%`}
+                  valueColor={aiColor}
+                />
+                {aiDetection?.signals.map((s, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", gap: 8 }}>
+                    <span style={{ ...monoStyle, fontSize: 10, color: "#B0ADA6" }}>{s.name}</span>
+                    <div style={{ textAlign: "right" }}>
+                      <span style={{ ...monoStyle, fontSize: 11, color: s.detected ? "#B85050" : "#6B8F4E" }}>
+                        {s.detected ? "Detected" : "Not detected"}
+                      </span>
+                      {s.detail && (
+                        <div style={{ ...monoStyle, fontSize: 9, color: "#B0ADA6", marginTop: 2 }}>{s.detail}</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <RightDataRow
+                  label="Source"
+                  value={aiDetection?.provider === "hive" ? "Hive AI API" : "Local heuristics"}
+                />
+              </>
+            )}
+          </div>
+
+          {/* File Fingerprint */}
+          <div style={{ borderBottom: "1px solid #D0CEC8", marginBottom: 24, paddingBottom: 24 }}>
+            <RightSectionHeader>File Fingerprint</RightSectionHeader>
+            <div style={{
+              ...monoStyle,
+              fontSize: 9,
+              color: "#B0ADA6",
+              wordBreak: "break-all",
+              marginBottom: 16,
+              lineHeight: 1.6,
+            }}>
+              {fileInfo.hash.slice(0, 32)}…
+            </div>
+            <RightDataRow label="Type" value={fileInfo.type} />
+            <RightDataRow label="Size" value={formatBytes(fileInfo.size)} />
+            <RightDataRow label="Verified at" value={formatDate(result.verifiedAt) ?? result.verifiedAt} />
+            <RightDataRow label="Processing" value={`${result.processingMs} ms`} />
+          </div>
+
+          {/* Share */}
+          <div>
+            <RightSectionHeader>Share</RightSectionHeader>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <button onClick={copyLink} style={btnOutline}>
+                {copied ? "Copied!" : "Copy link"}
+              </button>
+              <a
+                href={`mailto:?subject=${encodeURIComponent("TrustMark Verification Result")}&body=${encodeURIComponent(emailBody)}`}
+                style={btnOutline}
+              >
+                Email
+              </a>
+              <button onClick={copyAsText} style={btnOutline}>
+                Copy as text
+              </button>
+              <button onClick={downloadPdf} style={btnSolid}>
+                Download PDF
+              </button>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={btnOutline}
+              >
+                Post on X
+              </a>
+            </div>
+
+            <button
+              onClick={onReset}
+              style={{
+                ...btnSolid,
+                marginTop: 20,
+              }}
+            >
+              Verify another file
+            </button>
+          </div>
         </div>
       </div>
 
-      <button
-        onClick={onReset}
-        className="w-full py-4 rounded-2xl glass border border-white/10 hover:border-white/20 hover:bg-white/8 text-white/60 hover:text-white transition-all text-sm font-medium"
-      >
-        ← Verify another file
-      </button>
+      <style>{`
+        @media (max-width: 768px) {
+          .result-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+      `}</style>
     </motion.div>
   );
 }

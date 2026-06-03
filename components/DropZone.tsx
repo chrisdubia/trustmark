@@ -79,55 +79,56 @@ export default function DropZone({ onFile, disabled }: DropZoneProps) {
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div style={{ width: "100%" }}>
       {/* Drop zone */}
       <div
         {...getRootProps()}
-        className={[
-          "relative flex flex-col items-center justify-center",
-          "w-full min-h-[300px] rounded-2xl cursor-pointer",
-          "transition-all duration-300 select-none outline-none",
-          "border-2 border-dashed",
-          isDragActive
-            ? "border-blue-400 bg-blue-500/10 scale-[1.01]"
-            : disabled
-            ? "border-white/10 bg-white/3 cursor-not-allowed opacity-50"
-            : "border-white/15 bg-white/[0.03] hover:border-white/30 hover:bg-white/[0.06]",
-        ].join(" ")}
+        style={{
+          border: isDragActive ? "1px dashed #6B8F4E" : "1px dashed #C8C5BE",
+          background: "#F8F6F1",
+          borderRadius: 2,
+          minHeight: 200,
+          padding: 40,
+          cursor: disabled ? "not-allowed" : "pointer",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          opacity: disabled ? 0.5 : 1,
+          outline: "none",
+          userSelect: "none",
+          transition: "border-color 0.2s, background 0.2s",
+        }}
       >
         <input {...getInputProps()} />
 
-        <div className="flex flex-col items-center gap-5 px-8 text-center pointer-events-none">
-          <motion.div
-            animate={isDragActive ? { scale: 1.15, rotate: 5 } : { scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="w-20 h-20 rounded-2xl glass flex items-center justify-center"
-          >
-            <svg
-              className={`w-9 h-9 transition-colors ${isDragActive ? "text-blue-400" : "text-white/40"}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-              />
-            </svg>
-          </motion.div>
+        <svg
+          width="24" height="24" viewBox="0 0 24 24"
+          fill="none" stroke="#D8D5CE" strokeWidth="1.5"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ marginBottom: 16 }}
+        >
+          <path d="M12 19V5M5 12l7-7 7 7" />
+        </svg>
 
-          <div>
-            <p className="text-xl font-semibold text-white">
-              {isDragActive ? "Release to verify" : "Drop your file here"}
-            </p>
-            <p className="text-sm text-white/40 mt-2">
-              or{" "}
-              <span className="text-blue-400 underline underline-offset-2 cursor-pointer pointer-events-auto">
-                browse files
-              </span>
-            </p>
-          </div>
+        <div style={{
+          fontFamily: "'Epilogue', sans-serif",
+          fontWeight: 400,
+          fontSize: 13,
+          color: "#8A8880",
+          marginBottom: 8,
+          textAlign: "center",
+        }}>
+          {isDragActive ? "Release to verify" : "Drop file to verify"}
+        </div>
 
-          <p className="text-xs text-white/25 leading-relaxed">
-            JPG · PNG · WebP · HEIC · MP4 · MOV &nbsp;·&nbsp; max 50 MB
-          </p>
+        <div style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 10,
+          color: "#B0ADA6",
+          textAlign: "center",
+        }}>
+          JPG · PNG · WebP · HEIC · MP4 · MOV · max 50 MB
         </div>
       </div>
 
@@ -135,34 +136,57 @@ export default function DropZone({ onFile, disabled }: DropZoneProps) {
       <AnimatePresence>
         {rejectionMessage && (
           <motion.p
-            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="text-sm text-red-400 text-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 10,
+              color: "#B85050",
+              marginTop: 8,
+              textAlign: "center",
+            }}
           >
             {rejectionMessage}
           </motion.p>
         )}
       </AnimatePresence>
 
-      {/* URL paste */}
-      <div className="flex items-center gap-3">
-        <div className="flex-1 h-px bg-white/10" />
+      {/* URL paste — separator */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        margin: "20px 0 0",
+      }}>
+        <div style={{ flex: 1, height: 1, background: "#D8D5CE" }} />
         <button
           onClick={() => { setShowUrlInput((v) => !v); setTimeout(() => urlRef.current?.focus(), 50); }}
-          className="text-xs text-white/30 hover:text-white/60 transition-colors"
           disabled={disabled}
+          style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 10,
+            color: "#B0ADA6",
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+          }}
         >
-          or paste image URL
+          or paste a URL
         </button>
-        <div className="flex-1 h-px bg-white/10" />
+        <div style={{ flex: 1, height: 1, background: "#D8D5CE" }} />
       </div>
 
       <AnimatePresence>
         {showUrlInput && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }} className="overflow-hidden"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            style={{ overflow: "hidden", marginTop: 12 }}
           >
-            <div className="flex gap-2">
+            <div style={{ display: "flex" }}>
               <input
                 ref={urlRef}
                 type="url"
@@ -170,36 +194,48 @@ export default function DropZone({ onFile, disabled }: DropZoneProps) {
                 onChange={(e) => { setUrlInput(e.target.value); setUrlError(null); }}
                 onKeyDown={(e) => e.key === "Enter" && handleUrlFetch()}
                 placeholder="https://example.com/image.jpg"
-                className={[
-                  "flex-1 px-4 py-3 rounded-xl text-sm",
-                  "bg-white/5 border border-white/10 text-white placeholder-white/25",
-                  "focus:outline-none focus:border-blue-500/60 focus:bg-white/8",
-                  "transition-colors",
-                ].join(" ")}
+                style={{
+                  flex: 1,
+                  border: "1px solid #D8D5CE",
+                  borderRight: "none",
+                  background: "#F8F6F1",
+                  borderRadius: "2px 0 0 2px",
+                  padding: "10px 12px",
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 10,
+                  color: "#1C1C1A",
+                  outline: "none",
+                }}
                 disabled={disabled || fetchingUrl}
               />
               <button
                 onClick={handleUrlFetch}
                 disabled={!urlInput.trim() || disabled || fetchingUrl}
-                className={[
-                  "px-5 py-3 rounded-xl text-sm font-medium transition-all",
-                  "bg-blue-600 hover:bg-blue-500 text-white",
-                  "disabled:opacity-40 disabled:cursor-not-allowed",
-                ].join(" ")}
+                style={{
+                  background: "#1C1C1A",
+                  color: "#F2F0EB",
+                  border: "1px solid #1C1C1A",
+                  borderRadius: "0 2px 2px 0",
+                  padding: "10px 20px",
+                  fontFamily: "'DM Mono', monospace",
+                  fontSize: 9,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  cursor: (!urlInput.trim() || disabled || fetchingUrl) ? "not-allowed" : "pointer",
+                  opacity: (!urlInput.trim() || disabled || fetchingUrl) ? 0.4 : 1,
+                  whiteSpace: "nowrap",
+                }}
               >
-                {fetchingUrl ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                    </svg>
-                    Fetching
-                  </span>
-                ) : "Verify"}
+                {fetchingUrl ? "Fetching..." : "Verify"}
               </button>
             </div>
             {urlError && (
-              <p className="mt-2 text-xs text-red-400">{urlError}</p>
+              <p style={{
+                marginTop: 6,
+                fontFamily: "'DM Mono', monospace",
+                fontSize: 10,
+                color: "#B85050",
+              }}>{urlError}</p>
             )}
           </motion.div>
         )}

@@ -96,39 +96,63 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
   }, [imageUrl]);
 
   return (
-    <div className="glass rounded-xl p-5 space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest">
-            Error Level Analysis
-          </h3>
-          <p className="text-xs text-white/20 mt-0.5">
-            Bright regions indicate potential edits or compositing
-          </p>
+    <div style={{ borderTop: "1px solid #D8D5CE", paddingTop: 28 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <div style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 9,
+          textTransform: "uppercase",
+          letterSpacing: "0.18em",
+          color: "#B0ADA6",
+        }}>
+          Error Level Analysis
         </div>
         {elaUrl && (
           <button
             onClick={() => setShowEla((v) => !v)}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors shrink-0 ml-4"
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 10,
+              color: "#4A7A9B",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
           >
             {showEla ? "Show original" : "Show ELA"}
           </button>
         )}
       </div>
 
-      <div className="relative rounded-lg overflow-hidden bg-black/30 min-h-[160px] flex items-center justify-center">
+      <div style={{
+        background: "#1C1C1A",
+        borderRadius: 2,
+        overflow: "hidden",
+        minHeight: 160,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}>
         {loading && (
-          <div className="flex flex-col items-center gap-2 text-white/30 py-8">
-            <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24" fill="none">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-            </svg>
-            <span className="text-xs">Computing ELA…</span>
+          <div style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 10,
+            color: "#B0ADA6",
+            textAlign: "center",
+            padding: "32px 0",
+          }}>
+            Computing ELA…
           </div>
         )}
 
         {error && (
-          <p className="text-xs text-white/20 py-8">ELA not available for this file type</p>
+          <p style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 10,
+            color: "#B0ADA6",
+            padding: "32px 0",
+          }}>ELA not available for this file type</p>
         )}
 
         {!loading && !error && elaUrl && (
@@ -136,31 +160,28 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
             key={showEla ? "ela" : "orig"}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="w-full"
+            style={{ width: "100%" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={showEla ? elaUrl : imageUrl}
               alt={showEla ? "Error Level Analysis heatmap" : "Original image"}
-              className="w-full object-contain max-h-64"
+              style={{ width: "100%", objectFit: "contain", maxHeight: 256, display: "block" }}
             />
-            {showEla && (
-              <div className="absolute bottom-2 right-2 flex items-center gap-3 bg-black/60 rounded-lg px-3 py-1.5">
-                <span className="text-xs text-white/50">Low</span>
-                <div className="w-16 h-2 rounded-full" style={{
-                  background: "linear-gradient(to right, #1a0060, #8800ff, #ff4400, #ffffff)"
-                }} />
-                <span className="text-xs text-white/50">High</span>
-              </div>
-            )}
           </motion.div>
         )}
       </div>
 
-      {elaUrl && !showEla && (
-        <p className="text-xs text-white/20">
-          Click "Show ELA" to reveal a heatmap of compression anomalies.
-          Uniform texture = authentic. Bright patches = possible manipulation.
+      {elaUrl && (
+        <p style={{
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 10,
+          color: "#B0ADA6",
+          marginTop: 8,
+        }}>
+          {showEla
+            ? "Bright regions indicate potential edits or compositing. Uniform texture = authentic."
+            : 'Click “Show ELA” to reveal a heatmap of compression anomalies.'}
         </p>
       )}
     </div>
