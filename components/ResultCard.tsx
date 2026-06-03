@@ -425,8 +425,8 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                 <div style={{
                   ...epilogueStyle,
                   fontWeight: 300,
-                  fontSize: 13,
-                  color: "#8A8880",
+                  fontSize: 14,
+                  color: "#5A5855",
                   lineHeight: 1.5,
                 }}>{cfg.subtitle}</div>
               </div>
@@ -537,7 +537,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                     <div style={{ ...epilogueStyle, fontWeight: 400, fontSize: 13, color: "#1C1C1A", marginBottom: 2 }}>
                       {signal.label}
                     </div>
-                    <div style={{ ...monoStyle, fontSize: 10, color: "#A8A59E", letterSpacing: "0.04em" }}>
+                    <div style={{ ...monoStyle, fontSize: 11, color: "#5A5855", letterSpacing: "0.04em" }}>
                       {signal.detail}
                     </div>
                   </div>
@@ -652,7 +652,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                         {s.detected ? "Detected" : "Not detected"}
                       </span>
                       {s.detail && (
-                        <div style={{ ...monoStyle, fontSize: 9, color: "#B0ADA6", marginTop: 2 }}>{s.detail}</div>
+                        <div style={{ ...monoStyle, fontSize: 10, color: "#7A7870", marginTop: 2 }}>{s.detail}</div>
                       )}
                     </div>
                   </div>
