@@ -1,90 +1,146 @@
-import type { C2PAResult } from "./types";
+import type { C2PAResult, EditHistoryEntry } from "./types";
 
-// C2PA (Coalition for Content Provenance and Authenticity) markers are embedded
-// as XMP metadata in JPEG/PNG/HEIC files. We parse the raw binary for known
-// C2PA signatures without pulling in the full c2pa-node SDK (which requires
-// native bindings not available in Vercel edge).
+// Parses C2PA/JUMBF markers from raw binary without requiring native bindings.
+// c2pa-js (the official SDK) requires WASM and browser context; for server-side
+// we scan the buffer directly for known manifest store patterns.
 
-const C2PA_MANIFEST_STORE_MARKER = "c2pa.manifest";
-const JUMBF_MARKER = Buffer.from([0x6a, 0x75, 0x6d, 0x62]); // "jumb"
-const C2PA_LABEL = "c2pa";
-
-function bufferFromBase64(dataUrl: string): Buffer {
+function base64ToBuffer(dataUrl: string): Buffer {
   const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
   return Buffer.from(base64, "base64");
 }
 
-function scanForC2PAMarkers(buf: Buffer): {
-  found: boolean;
-  claimGenerator: string | null;
-  assertions: string[];
-} {
-  const str = buf.toString("binary");
-  const found =
-    str.includes(C2PA_MANIFEST_STORE_MARKER) ||
-    str.includes("c2pa.actions") ||
-    str.includes("c2pa.hash") ||
-    buf.includes(JUMBF_MARKER);
+const KNOWN_ASSERTION_LABELS = [
+  "c2pa.actions",
+  "c2pa.hash.data",
+  "c2pa.hash.bmff",
+  "c2pa.hash.boxes",
+  "c2pa.thumbnail.claim.jpeg",
+  "c2pa.thumbnail.claim.png",
+  "c2pa.thumbnail.ingredient.jpeg",
+  "c2pa.thumbnail.ingredient.png",
+  "stds.schema-org.CreativeWork",
+  "c2pa.training-mining",
+  "c2pa.ai-generative-training",
+  "c2pa.ai-inference",
+  "c2pa.ingredient",
+  "c2pa.depthmap",
+];
 
-  const assertions: string[] = [];
-  const assertionPatterns = [
-    "c2pa.actions",
-    "c2pa.hash.data",
-    "c2pa.hash.bmff",
-    "c2pa.thumbnail",
-    "stds.schema-org.CreativeWork",
-    "c2pa.training-mining",
-    "c2pa.ai-generative-training",
-  ];
-  for (const pattern of assertionPatterns) {
-    if (str.includes(pattern)) assertions.push(pattern);
+const AI_SOFTWARE_LABELS = [
+  "Adobe Firefly",
+  "Midjourney",
+  "DALL-E",
+  "Stable Diffusion",
+  "Adobe Generative Fill",
+];
+
+const ACTION_MAP: Record<string, string> = {
+  "c2pa.cropped": "Cropped",
+  "c2pa.filtered": "Filter applied",
+  "c2pa.color_adjustments": "Color adjustments",
+  "c2pa.resized": "Resized",
+  "c2pa.rotated": "Rotated",
+  "c2pa.flipped": "Flipped",
+  "c2pa.converted": "Format converted",
+  "c2pa.opened": "Opened",
+  "c2pa.placed": "Content placed",
+  "c2pa.removed": "Content removed",
+  "c2pa.repackaged": "Repackaged",
+  "c2pa.transcoded": "Transcoded",
+  "c2pa.watermarked": "Watermarked",
+  "c2pa.ai_generated": "AI content generated",
+};
+
+function extractEditHistory(str: string): EditHistoryEntry[] {
+  const history: EditHistoryEntry[] = [];
+
+  for (const [key, label] of Object.entries(ACTION_MAP)) {
+    if (str.includes(key)) {
+      const softwareMatch = str.match(
+        new RegExp(`${key.replace(".", "\\.")}[^}]*?"softwareAgent"\\s*:\\s*"([^"]{1,80})"`)
+      );
+      const whenMatch = str.match(
+        new RegExp(`${key.replace(".", "\\.")}[^}]*?"when"\\s*:\\s*"([^"]{1,40})"`)
+      );
+      history.push({
+        action: label,
+        softwareAgent: softwareMatch?.[1] ?? null,
+        when: whenMatch?.[1] ?? null,
+      });
+    }
   }
 
-  // Extract claim generator string if present
-  let claimGenerator: string | null = null;
-  const cgMatch = str.match(/claim_generator[":]+\s*([^\x00"\\]{3,80})/);
-  if (cgMatch) claimGenerator = cgMatch[1].trim();
-
-  return { found, claimGenerator, assertions };
+  return history;
 }
 
-function extractXMPField(buf: Buffer, field: string): string | null {
-  const str = buf.toString("utf8", 0, Math.min(buf.length, 65536));
-  const pattern = new RegExp(`<[^>]*${field}[^>]*>([^<]{1,200})<`, "i");
+function extractField(str: string, key: string): string | null {
+  const pattern = new RegExp(`"${key}"\\s*:\\s*"([^"]{1,200})"`, "i");
   const match = str.match(pattern);
-  return match ? match[1].trim() : null;
+  return match?.[1]?.trim() ?? null;
+}
+
+function extractXMPField(str: string, field: string): string | null {
+  const pattern = new RegExp(`<[^>]*?${field}[^>]*?>([^<]{1,200})<`, "i");
+  const match = str.match(pattern);
+  return match?.[1]?.trim() ?? null;
 }
 
 export async function verifyC2PA(dataUrl: string): Promise<C2PAResult> {
   try {
-    const buf = bufferFromBase64(dataUrl);
-    const { found, claimGenerator, assertions } = scanForC2PAMarkers(buf);
+    const buf = base64ToBuffer(dataUrl);
+    // Read first 128 KB for manifest scanning — manifests are near the start
+    const scanBuf = buf.subarray(0, Math.min(buf.length, 131072));
+    const str = scanBuf.toString("latin1");
 
-    if (!found) {
+    const hasManifest =
+      str.includes("c2pa.manifest") ||
+      str.includes("c2pa.claim") ||
+      str.includes("jumb") ||
+      str.includes("c2ma");
+
+    if (!hasManifest) {
       return {
         hasCertificate: false,
         issuer: null,
         signingTime: null,
         claimGenerator: null,
         assertions: [],
+        editCount: 0,
+        editHistory: [],
         thumbnailMatch: null,
         valid: false,
       };
     }
 
+    const assertions = KNOWN_ASSERTION_LABELS.filter((label) =>
+      str.includes(label)
+    );
+
+    const editHistory = extractEditHistory(str);
+    const editCount = editHistory.length;
+
+    const claimGenerator =
+      extractField(str, "claim_generator") ??
+      extractField(str, "claimGenerator") ??
+      null;
+
     const issuer =
-      extractXMPField(buf, "dc:creator") ||
-      extractXMPField(buf, "photoshop:Credit") ||
+      extractField(str, "commonName") ??
+      extractField(str, "issuer") ??
+      extractXMPField(str, "dc:creator") ??
       null;
 
     const signingTime =
-      extractXMPField(buf, "xmp:CreateDate") ||
-      extractXMPField(buf, "photoshop:DateCreated") ||
+      extractField(str, "iat") ??
+      extractField(str, "signingTime") ??
+      extractXMPField(str, "xmp:CreateDate") ??
       null;
 
-    const thumbnailMatch = assertions.includes("c2pa.thumbnail")
-      ? true
-      : null;
+    const hasThumbnail =
+      assertions.some((a) => a.includes("thumbnail")) ? true : null;
+
+    const hasAIAssertion = assertions.includes("c2pa.ai_generated") ||
+      AI_SOFTWARE_LABELS.some((sw) => str.includes(sw));
 
     return {
       hasCertificate: true,
@@ -92,8 +148,10 @@ export async function verifyC2PA(dataUrl: string): Promise<C2PAResult> {
       signingTime,
       claimGenerator,
       assertions,
-      thumbnailMatch,
-      valid: assertions.length > 0,
+      editCount,
+      editHistory,
+      thumbnailMatch: hasThumbnail,
+      valid: !hasAIAssertion && assertions.length > 0,
     };
   } catch {
     return {
@@ -102,6 +160,8 @@ export async function verifyC2PA(dataUrl: string): Promise<C2PAResult> {
       signingTime: null,
       claimGenerator: null,
       assertions: [],
+      editCount: 0,
+      editHistory: [],
       thumbnailMatch: null,
       valid: false,
     };

@@ -1,4 +1,4 @@
-export type VerdictType = "REAL" | "AI_GENERATED" | "EDITED" | "UNKNOWN";
+export type VerdictType = "VERIFIED" | "MODIFIED" | "SYNTHETIC" | "UNKNOWN";
 
 export interface C2PAResult {
   hasCertificate: boolean;
@@ -6,25 +6,28 @@ export interface C2PAResult {
   signingTime: string | null;
   claimGenerator: string | null;
   assertions: string[];
+  editCount: number;
+  editHistory: EditHistoryEntry[];
   thumbnailMatch: boolean | null;
   valid: boolean;
+}
+
+export interface EditHistoryEntry {
+  action: string;
+  softwareAgent: string | null;
+  when: string | null;
 }
 
 export interface ExifData {
   make: string | null;
   model: string | null;
   software: string | null;
-  dateTime: string | null;
+  dateTimeOriginal: string | null;
+  dateTimeModified: string | null;
   gps: { lat: number; lon: number } | null;
   width: number | null;
   height: number | null;
   hasStrippedMetadata: boolean;
-}
-
-export interface AIDetectionResult {
-  score: number; // 0–1, where 1 = definitely AI
-  signals: AISignal[];
-  provider: "hive" | "sightengine" | "local" | null;
 }
 
 export interface AISignal {
@@ -33,9 +36,17 @@ export interface AISignal {
   detail?: string;
 }
 
+export interface AIDetectionResult {
+  score: number;
+  signals: AISignal[];
+  provider: "hive" | "local" | "unavailable";
+  unavailable?: boolean;
+}
+
 export interface VerificationResult {
+  id: string;
   verdict: VerdictType;
-  confidence: number; // 0–100
+  confidence: number;
   fileInfo: {
     name: string;
     type: string;
@@ -46,6 +57,7 @@ export interface VerificationResult {
   exif: ExifData | null;
   aiDetection: AIDetectionResult | null;
   processingMs: number;
+  verifiedAt: string;
   error?: string;
 }
 
@@ -53,5 +65,5 @@ export interface VerifyRequest {
   fileName: string;
   fileType: string;
   fileSize: number;
-  dataUrl: string; // base64 — never stored server-side
+  dataUrl: string;
 }

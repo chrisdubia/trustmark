@@ -1,140 +1,119 @@
 import type { AIDetectionResult, AISignal } from "./types";
 
-// Calls Hive Moderation API if HIVE_API_KEY is set, otherwise falls back to
-// SightEngine if SIGHTENGINE_API_USER/SECRET are set, otherwise runs local
-// heuristics only. Results are never stored.
-
-async function callHive(base64Image: string): Promise<AIDetectionResult | null> {
+async function callHive(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey || apiKey === "placeholder") return null;
 
   try {
+    const buf = Buffer.from(base64, "base64");
+    const blob = new Blob([buf], { type: mimeType });
     const formData = new FormData();
-    const blob = new Blob([Buffer.from(base64Image, "base64")], {
-      type: "image/jpeg",
-    });
-    formData.append("media", blob, "image.jpg");
+    formData.append("media", blob, "media");
 
     const res = await fetch("https://api.thehive.ai/api/v2/task/sync", {
       method: "POST",
       headers: { Authorization: `Token ${apiKey}` },
       body: formData,
-      signal: AbortSignal.timeout(8000),
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!res.ok) return null;
-    const data = await res.json();
 
+    const data = await res.json();
     const classes: Array<{ class: string; score: number }> =
       data?.status?.[0]?.response?.output?.[0]?.classes ?? [];
 
-    const aiClass = classes.find((c) => c.class === "ai_generated");
-    const score = aiClass?.score ?? 0;
+    const get = (name: string) =>
+      classes.find((c) => c.class === name)?.score ?? 0;
+
+    const aiScore = get("ai_generated");
+    const notAiScore = get("not_ai_generated");
 
     const signals: AISignal[] = [
       {
         name: "AI Generated",
-        detected: score > 0.5,
-        detail: `${(score * 100).toFixed(1)}% confidence`,
+        detected: aiScore > 0.5,
+        detail: `${(aiScore * 100).toFixed(1)}% probability`,
+      },
+      {
+        name: "Not AI Generated",
+        detected: notAiScore > 0.5,
+        detail: `${(notAiScore * 100).toFixed(1)}% probability`,
       },
     ];
 
-    return { score, signals, provider: "hive" };
+    return { score: aiScore, signals, provider: "hive" };
   } catch {
     return null;
   }
 }
 
-async function callSightEngine(
-  base64Image: string
-): Promise<AIDetectionResult | null> {
-  const user = process.env.SIGHTENGINE_API_USER;
-  const secret = process.env.SIGHTENGINE_API_SECRET;
-  if (!user || !secret) return null;
+const AI_GENERATOR_KEYWORDS = [
+  { keyword: "midjourney", label: "Midjourney" },
+  { keyword: "stable diffusion", label: "Stable Diffusion" },
+  { keyword: "dall-e", label: "DALL-E" },
+  { keyword: "dall·e", label: "DALL-E" },
+  { keyword: "firefly", label: "Adobe Firefly" },
+  { keyword: "imagen", label: "Google Imagen" },
+  { keyword: "leonardo", label: "Leonardo AI" },
+  { keyword: "runway", label: "Runway" },
+  { keyword: "kling", label: "Kling" },
+  { keyword: "sora", label: "Sora" },
+  { keyword: "dreamstudio", label: "DreamStudio" },
+  { keyword: "comfyui", label: "ComfyUI" },
+  { keyword: "automatic1111", label: "AUTOMATIC1111" },
+  { keyword: "invoke ai", label: "InvokeAI" },
+  { keyword: "novelai", label: "NovelAI" },
+];
 
-  try {
-    const formData = new FormData();
-    const blob = new Blob([Buffer.from(base64Image, "base64")], {
-      type: "image/jpeg",
-    });
-    formData.append("media", blob, "image.jpg");
-    formData.append("models", "genai");
-    formData.append("api_user", user);
-    formData.append("api_secret", secret);
+const EDITING_SOFTWARE = [
+  "photoshop", "lightroom", "gimp", "darktable",
+  "capture one", "affinity photo", "snapseed", "vsco", "facetune",
+  "luminar", "pixelmator", "canva",
+];
 
-    const res = await fetch("https://api.sightengine.com/1.0/check.json", {
-      method: "POST",
-      body: formData,
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-
-    const score: number = data?.type?.ai_generated ?? 0;
-    const signals: AISignal[] = [
-      {
-        name: "AI Generated",
-        detected: score > 0.5,
-        detail: `${(score * 100).toFixed(1)}% confidence`,
-      },
-      {
-        name: "GAN Synthetic",
-        detected: (data?.type?.gan ?? 0) > 0.5,
-      },
-    ];
-
-    return { score, signals, provider: "sightengine" };
-  } catch {
-    return null;
-  }
-}
-
-// Local heuristics based on metadata signals — not a real classifier,
-// but surfaces meaningful signals when no API key is present.
 function localHeuristics(
-  softwareTag: string | null,
-  hasExif: boolean
+  software: string | null,
+  hasCamera: boolean
 ): AIDetectionResult {
   const signals: AISignal[] = [];
   let score = 0;
 
-  const aiSoftwareKeywords = [
-    "midjourney",
-    "stable diffusion",
-    "dall-e",
-    "firefly",
-    "imagen",
-    "leonardo",
-    "runway",
-    "kling",
-    "sora",
-    "gen-2",
-    "dreamstudio",
-  ];
+  const sw = (software ?? "").toLowerCase();
 
-  const softwareLower = (softwareTag ?? "").toLowerCase();
-  const aiSoftwareMatch = aiSoftwareKeywords.find((kw) =>
-    softwareLower.includes(kw)
-  );
-
-  if (aiSoftwareMatch) {
-    score = 0.95;
+  const aiMatch = AI_GENERATOR_KEYWORDS.find((k) => sw.includes(k.keyword));
+  if (aiMatch) {
+    score = 0.97;
     signals.push({
-      name: "AI Software Tag",
+      name: "AI Generator Identified",
       detected: true,
-      detail: `"${softwareTag}" matches known AI generator`,
+      detail: `Software tag matches "${aiMatch.label}"`,
     });
   } else {
-    signals.push({ name: "AI Software Tag", detected: false });
+    signals.push({ name: "AI Generator Identified", detected: false });
   }
 
-  if (!hasExif) {
-    score = Math.max(score, 0.3);
+  const editMatch = EDITING_SOFTWARE.find((e) => sw.includes(e));
+  if (editMatch && !aiMatch) {
+    signals.push({
+      name: "Editing Software Detected",
+      detected: true,
+      detail: `"${software}" found in metadata`,
+    });
+  } else {
+    signals.push({
+      name: "Editing Software Detected",
+      detected: !!editMatch,
+      detail: editMatch ? `"${software}"` : undefined,
+    });
+  }
+
+  if (!hasCamera && !aiMatch) {
+    score = Math.max(score, 0.25);
     signals.push({
       name: "No Camera Metadata",
       detected: true,
-      detail: "Metadata absent or stripped — common in AI images",
+      detail: "Absent or stripped — common in synthetic/shared images",
     });
   } else {
     signals.push({ name: "No Camera Metadata", detected: false });
@@ -145,18 +124,25 @@ function localHeuristics(
 
 export async function detectAI(
   dataUrl: string,
-  softwareTag: string | null,
-  hasExif: boolean
+  mimeType: string,
+  software: string | null,
+  hasCamera: boolean
 ): Promise<AIDetectionResult> {
   const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
 
-  const [hive, sight] = await Promise.all([
-    callHive(base64),
-    callSightEngine(base64),
-  ]);
-
+  const hive = await callHive(base64, mimeType);
   if (hive) return hive;
-  if (sight) return sight;
 
-  return localHeuristics(softwareTag, hasExif);
+  const hasKey = !!process.env.HIVE_API_KEY && process.env.HIVE_API_KEY !== "placeholder";
+
+  const local = localHeuristics(software, hasCamera);
+
+  if (!hasKey) {
+    return {
+      ...local,
+      unavailable: true,
+    };
+  }
+
+  return local;
 }
