@@ -1,7 +1,17 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-// Allow all routes — auth is optional, not required for verification
-export default clerkMiddleware();
+const clerkConfigured =
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== "placeholder" &&
+  process.env.CLERK_SECRET_KEY &&
+  process.env.CLERK_SECRET_KEY !== "placeholder";
+
+// If Clerk is not configured, pass all requests through with no auth
+const passthrough = (_req: NextRequest) => NextResponse.next();
+
+export default clerkConfigured ? clerkMiddleware() : passthrough;
 
 export const config = {
   matcher: [

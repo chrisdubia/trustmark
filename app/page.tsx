@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useUser } from "@clerk/nextjs";
 import DropZone from "@/components/DropZone";
 import ResultCard from "@/components/ResultCard";
 import ProgressBar from "@/components/ProgressBar";
@@ -43,6 +44,7 @@ function compressImage(dataUrl: string, maxDimension = 2048, quality = 0.88): Pr
 }
 
 export default function Home() {
+  const { user } = useUser();
   const [state, setState] = useState<AppState>("idle");
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -92,6 +94,7 @@ export default function Home() {
           fileSize: file.size,
           dataUrl,
           clientExif,
+          userEmail: user?.primaryEmailAddress?.emailAddress ?? "",
         }),
       });
 

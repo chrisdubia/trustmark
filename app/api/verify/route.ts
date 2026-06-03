@@ -5,6 +5,8 @@ import { extractExif } from "@/lib/exif";
 import { deriveVerdict } from "@/lib/verdict";
 import { runForensics } from "@/lib/forensics";
 import { checkAndRecordHash } from "@/lib/knownFakes";
+import { getCurrentUserId } from "@/lib/auth";
+import { getUser, upsertUser, logVerification, PLAN_LIMITS } from "@/lib/db";
 import type { VerificationResult, VerifyRequest } from "@/lib/types";
 import { createHash } from "crypto";
 import { v4 as uuidv4 } from "uuid";
@@ -29,6 +31,21 @@ export async function POST(req: NextRequest) {
   }
 
   const { fileName, fileType, fileSize, dataUrl, clientExif } = body;
+
+  // Signed-in limit enforcement
+  const userId = await getCurrentUserId();
+  if (userId) {
+    const user = await getUser(userId);
+    if (user?.plan === "free") {
+      const limit = PLAN_LIMITS.free.verifications;
+      if ((user.verifications_used ?? 0) >= limit) {
+        return NextResponse.json(
+          { error: `Free plan limit reached (${limit} verifications/month). Upgrade to continue.`, limitReached: true },
+          { status: 402 }
+        );
+      }
+    }
+  }
 
   if (!dataUrl || !fileName || !fileType) {
     return NextResponse.json(
@@ -77,8 +94,18 @@ export async function POST(req: NextRequest) {
 
     const knownFakes = await checkAndRecordHash(hash, verdict, confidence, fileName);
 
+    const id = uuidv4();
+    const certId = `TM-${new Date().getFullYear()}-${id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+
+    // Log to DB if signed in
+    if (userId) {
+      const email = body.userEmail ?? "";
+      if (email) await upsertUser(userId, email).catch(() => {});
+      await logVerification(userId, id, fileName, verdict, confidence, hash, certId).catch(() => {});
+    }
+
     const result: VerificationResult = {
-      id: uuidv4(),
+      id,
       verdict,
       confidence,
       fileInfo: { name: fileName, type: fileType, size: fileSize, hash },
