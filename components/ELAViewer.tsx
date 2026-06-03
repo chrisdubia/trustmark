@@ -100,10 +100,10 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div style={{
           fontFamily: "'DM Mono', monospace",
-          fontSize: 9,
+          fontSize: 11,
           textTransform: "uppercase",
           letterSpacing: "0.18em",
-          color: "#B0ADA6",
+          color: "#7A7870",
         }}>
           Error Level Analysis
         </div>
@@ -175,8 +175,8 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
       {elaUrl && (
         <p style={{
           fontFamily: "'DM Mono', monospace",
-          fontSize: 10,
-          color: "#B0ADA6",
+          fontSize: 11,
+          color: "#5A5855",
           marginTop: 8,
         }}>
           {showEla

@@ -507,8 +507,8 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                 justifyContent: "space-between",
                 marginTop: 8,
                 ...monoStyle,
-                fontSize: 10,
-                color: "#B0ADA6",
+                fontSize: 12,
+                color: "#7A7870",
               }}>
                 <span>{fileInfo.name}</span>
                 <span>{formatBytes(fileInfo.size)} · {fileInfo.type}</span>
