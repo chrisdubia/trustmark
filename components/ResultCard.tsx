@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { VerificationResult } from "@/lib/types";
+import ELAViewer from "./ELAViewer";
 
 interface ResultCardProps {
   result: VerificationResult;
@@ -13,43 +14,57 @@ const VERDICT_CONFIG = {
   VERIFIED: {
     icon: "✓",
     label: "VERIFIED",
-    sublabel: "Provenance intact",
+    sublabel: "This media is authentic",
     color: "text-green-400",
     bg: "bg-green-500/10",
     border: "border-green-500/30",
     glow: "shadow-green-500/20",
-    ring: "ring-green-500/20",
+    barColor: "bg-green-400",
   },
   MODIFIED: {
     icon: "⚠",
     label: "MODIFIED",
-    sublabel: "Edits detected",
+    sublabel: "This media has been altered",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/30",
     glow: "shadow-amber-500/20",
-    ring: "ring-amber-500/20",
+    barColor: "bg-amber-400",
   },
   SYNTHETIC: {
     icon: "✕",
     label: "SYNTHETIC",
-    sublabel: "AI-generated or no provenance",
+    sublabel: "This media cannot be verified",
     color: "text-red-400",
     bg: "bg-red-500/10",
     border: "border-red-500/30",
     glow: "shadow-red-500/20",
-    ring: "ring-red-500/20",
+    barColor: "bg-red-400",
   },
   UNKNOWN: {
     icon: "?",
     label: "UNKNOWN",
-    sublabel: "Cannot determine authenticity",
+    sublabel: "Authenticity cannot be determined",
     color: "text-gray-400",
     bg: "bg-gray-500/10",
     border: "border-gray-500/30",
     glow: "shadow-gray-500/20",
-    ring: "ring-gray-500/20",
+    barColor: "bg-gray-400",
   },
+};
+
+const STATUS_COLORS = {
+  pass: "text-green-400",
+  warn: "text-amber-400",
+  fail: "text-red-400",
+  info: "text-blue-400",
+};
+
+const STATUS_ICONS = {
+  pass: "✓",
+  warn: "⚠",
+  fail: "✕",
+  info: "ℹ",
 };
 
 function formatBytes(bytes: number): string {
@@ -70,10 +85,12 @@ function formatDate(iso: string | null): string | null {
   }
 }
 
-function Row({ label, value, href }: { label: string; value: string; href?: string }) {
+function Row({ label, value, href, mono }: {
+  label: string; value: string; href?: string; mono?: boolean
+}) {
   return (
     <div className="flex items-start justify-between gap-4 py-3 border-b border-white/5 last:border-0">
-      <span className="text-sm text-white/40 shrink-0 w-40">{label}</span>
+      <span className="text-sm text-white/40 shrink-0 w-36">{label}</span>
       {href ? (
         <a
           href={href} target="_blank" rel="noopener noreferrer"
@@ -82,16 +99,23 @@ function Row({ label, value, href }: { label: string; value: string; href?: stri
           {value} ↗
         </a>
       ) : (
-        <span className="text-sm text-white/80 text-right break-all">{value}</span>
+        <span className={`text-sm text-white/80 text-right break-all ${mono ? "font-mono text-xs" : ""}`}>
+          {value}
+        </span>
       )}
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, subtitle, children }: {
+  title: string; subtitle?: string; children: React.ReactNode
+}) {
   return (
     <div className="glass rounded-xl p-5">
-      <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-1">{title}</h3>
+      <div className="mb-3">
+        <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest">{title}</h3>
+        {subtitle && <p className="text-xs text-white/20 mt-0.5">{subtitle}</p>}
+      </div>
       <div>{children}</div>
     </div>
   );
@@ -99,7 +123,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function ResultCard({ result, previewUrl, onReset }: ResultCardProps) {
   const cfg = VERDICT_CONFIG[result.verdict];
-  const { exif, c2pa, aiDetection, fileInfo, confidence } = result;
+  const { exif, c2pa, aiDetection, forensics, fileInfo, confidence } = result;
 
   const mapsUrl = exif?.gps
     ? `https://maps.google.com/?q=${exif.gps.lat},${exif.gps.lon}`
@@ -110,6 +134,14 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
   const copyLink = () => navigator.clipboard.writeText(shareUrl);
 
   const shareText = `I verified this media with TrustMark — verdict: ${result.verdict}. ${shareUrl}`;
+
+  const originLabels: Record<string, string> = {
+    camera: "Real camera capture",
+    screenshot: "Screenshot",
+    web: "Downloaded from web",
+    ai_likely: "Likely AI-generated",
+    unknown: "Unknown origin",
+  };
 
   return (
     <motion.div
@@ -128,15 +160,10 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
           cfg.bg, cfg.border,
         ].join(" ")}
       >
-        <div className={`text-7xl font-black mb-2 ${cfg.color}`} aria-label={cfg.label}>
-          {cfg.icon}
-        </div>
-        <h2 className={`text-4xl font-black tracking-tight ${cfg.color}`}>
-          {cfg.label}
-        </h2>
+        <div className={`text-7xl font-black mb-2 ${cfg.color}`}>{cfg.icon}</div>
+        <h2 className={`text-4xl font-black tracking-tight ${cfg.color}`}>{cfg.label}</h2>
         <p className="text-white/50 mt-2 text-sm">{cfg.sublabel}</p>
 
-        {/* Confidence bar */}
         <div className="mt-6 max-w-xs mx-auto">
           <div className="flex justify-between text-xs text-white/30 mb-2">
             <span>Confidence</span>
@@ -147,22 +174,18 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
               initial={{ width: 0 }}
               animate={{ width: `${confidence}%` }}
               transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-              className={`h-full rounded-full ${cfg.color.replace("text-", "bg-")}`}
+              className={`h-full rounded-full ${cfg.barColor}`}
             />
           </div>
         </div>
       </motion.div>
 
-      {/* Preview + file info */}
+      {/* Preview */}
       {previewUrl && (
         <div className="glass rounded-2xl overflow-hidden">
           <div className="relative w-full max-h-64 bg-black flex items-center justify-center overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewUrl}
-              alt="Uploaded file preview"
-              className="max-w-full max-h-64 object-contain"
-            />
+            <img src={previewUrl} alt="Uploaded file preview" className="max-w-full max-h-64 object-contain" />
             <div className={[
               "absolute top-3 right-3 px-3 py-1.5 rounded-full",
               "text-xs font-bold tracking-wide",
@@ -178,143 +201,169 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
         </div>
       )}
 
-      {/* Detail sections */}
-      <div className="grid grid-cols-1 gap-4">
-
-        {/* Device & capture */}
-        {(exif?.make || exif?.model || exif?.dateTimeOriginal || exif?.gps) && (
-          <Section title="Capture Info">
-            {(exif.make || exif.model) && (
-              <Row label="Device" value={[exif.make, exif.model].filter(Boolean).join(" ")} />
-            )}
-            {exif.lensModel && (
-              <Row label="Lens" value={exif.lensModel} />
-            )}
-            {exif.dateTimeOriginal && (
-              <Row label="Captured" value={formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal} />
-            )}
-            {exif.dateTimeModified && exif.dateTimeModified !== exif.dateTimeOriginal && (
-              <Row label="Last modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
-            )}
-            {exif.width && exif.height && (
-              <Row label="Resolution" value={`${exif.width} × ${exif.height} px`} />
-            )}
-            {(exif.aperture || exif.shutterSpeed || exif.iso || exif.focalLength) && (
-              <Row
-                label="Camera settings"
-                value={[
-                  exif.focalLength ? `${exif.focalLength}mm` : null,
-                  exif.aperture ? `f/${exif.aperture}` : null,
-                  exif.shutterSpeed ?? null,
-                  exif.iso ? `ISO ${exif.iso}` : null,
-                ].filter(Boolean).join("  ·  ")}
-              />
-            )}
-            {exif.gps && mapsUrl && (
-              <Row
-                label="GPS coordinates"
-                value={`${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`}
-                href={mapsUrl}
-              />
-            )}
-            {exif.altitude !== null && (
-              <Row label="Altitude" value={`${exif.altitude} m`} />
-            )}
-            {exif.software && (
-              <Row label="Software" value={exif.software} />
-            )}
-          </Section>
-        )}
-
-        {/* C2PA */}
-        <Section title="Provenance (C2PA)">
-          <Row label="Manifest present" value={c2pa?.hasCertificate ? "Yes" : "No"} />
-          <Row label="Signature valid" value={c2pa?.valid ? "Yes" : "No"} />
-          {c2pa?.issuer && <Row label="Issuer" value={c2pa.issuer} />}
-          {c2pa?.claimGenerator && <Row label="Claim generator" value={c2pa.claimGenerator} />}
-          {c2pa?.signingTime && <Row label="Signed at" value={formatDate(c2pa.signingTime) ?? c2pa.signingTime} />}
-          <Row label="Edit count" value={String(c2pa?.editCount ?? 0)} />
-          {(c2pa?.editHistory?.length ?? 0) > 0 && (
-            <div className="pt-3">
-              <p className="text-xs text-white/30 mb-2">Edit history</p>
-              <ul className="space-y-1">
-                {c2pa!.editHistory.map((e, i) => (
-                  <li key={i} className="text-sm text-white/60 flex items-start gap-2">
-                    <span className="text-amber-400 shrink-0">→</span>
-                    <span>
-                      {e.action}
-                      {e.softwareAgent && <span className="text-white/30"> via {e.softwareAgent}</span>}
-                      {e.when && <span className="text-white/30"> · {formatDate(e.when) ?? e.when}</span>}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </Section>
-
-        {/* AI Detection */}
-        <Section title="AI Detection">
-          {aiDetection?.unavailable ? (
-            <p className="text-sm text-white/30 py-1">
-              AI detection unavailable — set <code className="text-white/50">HIVE_API_KEY</code> to enable
-            </p>
-          ) : (
-            <>
-              <div className="flex items-center justify-between py-3 border-b border-white/5">
-                <span className="text-sm text-white/40">AI probability</span>
-                <div className="flex items-center gap-3">
-                  <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(aiDetection?.score ?? 0) * 100}%` }}
-                      transition={{ delay: 0.4, duration: 0.5 }}
-                      className={`h-full rounded-full ${
-                        (aiDetection?.score ?? 0) > 0.6
-                          ? "bg-red-400"
-                          : (aiDetection?.score ?? 0) > 0.3
-                          ? "bg-amber-400"
-                          : "bg-green-400"
-                      }`}
-                    />
-                  </div>
-                  <span className="text-sm text-white/80 w-12 text-right">
-                    {Math.round((aiDetection?.score ?? 0) * 100)}%
-                  </span>
+      {/* Forensics signals */}
+      {forensics && forensics.signals.length > 0 && (
+        <Section
+          title="Forensic Analysis"
+          subtitle={`Estimated origin: ${originLabels[forensics.estimatedOrigin]}`}
+        >
+          <div className="space-y-0">
+            {forensics.signals.map((signal) => (
+              <div
+                key={signal.id}
+                className="flex items-start gap-3 py-3 border-b border-white/5 last:border-0"
+              >
+                <span className={`text-sm font-bold shrink-0 w-4 ${STATUS_COLORS[signal.status]}`}>
+                  {STATUS_ICONS[signal.status]}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium ${STATUS_COLORS[signal.status]}`}>
+                    {signal.label}
+                  </p>
+                  <p className="text-xs text-white/30 mt-0.5">{signal.detail}</p>
                 </div>
               </div>
-              {aiDetection?.signals.map((s, i) => (
-                <div key={i} className="flex items-start justify-between py-2 border-b border-white/5 last:border-0">
-                  <span className="text-sm text-white/40">{s.name}</span>
-                  <div className="text-right">
-                    <span className={`text-sm font-medium ${s.detected ? "text-red-400" : "text-green-400"}`}>
-                      {s.detected ? "Detected" : "Not detected"}
-                    </span>
-                    {s.detail && (
-                      <p className="text-xs text-white/30 mt-0.5">{s.detail}</p>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <Row label="Detection source" value={aiDetection?.provider === "hive" ? "Hive AI API" : "Local heuristics"} />
-            </>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {/* ELA heatmap — images only */}
+      {previewUrl && fileInfo.type.startsWith("image/") && (
+        <ELAViewer imageUrl={previewUrl} />
+      )}
+
+      {/* Capture info */}
+      {(exif?.make || exif?.model || exif?.dateTimeOriginal || exif?.gps) && (
+        <Section title="Capture Info">
+          {(exif.make || exif.model) && (
+            <Row label="Device" value={[exif.make, exif.model].filter(Boolean).join(" ")} />
           )}
+          {exif.lensModel && <Row label="Lens" value={exif.lensModel} />}
+          {exif.dateTimeOriginal && (
+            <Row label="Captured" value={formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal} />
+          )}
+          {exif.dateTimeModified && exif.dateTimeModified !== exif.dateTimeOriginal && (
+            <Row label="Last modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
+          )}
+          {exif.width && exif.height && (
+            <Row label="Resolution" value={`${exif.width} × ${exif.height} px`} />
+          )}
+          {(exif.aperture || exif.shutterSpeed || exif.iso || exif.focalLength) && (
+            <Row
+              label="Camera settings"
+              value={[
+                exif.focalLength ? `${exif.focalLength}mm` : null,
+                exif.aperture ? `f/${exif.aperture}` : null,
+                exif.shutterSpeed ?? null,
+                exif.iso ? `ISO ${exif.iso}` : null,
+              ].filter(Boolean).join("  ·  ")}
+            />
+          )}
+          {exif.gps && mapsUrl && (
+            <Row
+              label="GPS coordinates"
+              value={`${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`}
+              href={mapsUrl}
+            />
+          )}
+          {exif.altitude !== null && (
+            <Row label="Altitude" value={`${exif.altitude} m`} />
+          )}
+          {exif.software && <Row label="Software" value={exif.software} />}
         </Section>
+      )}
 
-        {/* File fingerprint */}
-        <Section title="File Fingerprint">
-          <Row label="SHA-256" value={`${fileInfo.hash.slice(0, 16)}…${fileInfo.hash.slice(-8)}`} />
-          <Row label="Type" value={fileInfo.type} />
-          <Row label="Size" value={formatBytes(fileInfo.size)} />
-          <Row label="Verified at" value={formatDate(result.verifiedAt) ?? result.verifiedAt} />
-          <Row label="Processing time" value={`${result.processingMs} ms`} />
-        </Section>
-      </div>
+      {/* C2PA */}
+      <Section title="Provenance (C2PA)">
+        <Row label="Manifest present" value={c2pa?.hasCertificate ? "Yes" : "No"} />
+        <Row label="Signature valid" value={c2pa?.valid ? "Yes" : "No"} />
+        {c2pa?.issuer && <Row label="Issuer" value={c2pa.issuer} />}
+        {c2pa?.claimGenerator && <Row label="Claim generator" value={c2pa.claimGenerator} />}
+        {c2pa?.signingTime && (
+          <Row label="Signed at" value={formatDate(c2pa.signingTime) ?? c2pa.signingTime} />
+        )}
+        <Row label="Edit count" value={String(c2pa?.editCount ?? 0)} />
+        {(c2pa?.editHistory?.length ?? 0) > 0 && (
+          <div className="pt-3">
+            <p className="text-xs text-white/30 mb-2">Edit history</p>
+            <ul className="space-y-1">
+              {c2pa!.editHistory.map((e, i) => (
+                <li key={i} className="text-sm text-white/60 flex items-start gap-2">
+                  <span className="text-amber-400 shrink-0">→</span>
+                  <span>
+                    {e.action}
+                    {e.softwareAgent && <span className="text-white/30"> via {e.softwareAgent}</span>}
+                    {e.when && <span className="text-white/30"> · {formatDate(e.when) ?? e.when}</span>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Section>
 
-      {/* Share card */}
+      {/* AI Detection */}
+      <Section title="AI Detection">
+        {aiDetection?.unavailable ? (
+          <p className="text-sm text-white/30 py-1">
+            AI detection unavailable — set <code className="text-white/50">HIVE_API_KEY</code> to enable
+          </p>
+        ) : (
+          <>
+            <div className="flex items-center justify-between py-3 border-b border-white/5">
+              <span className="text-sm text-white/40">AI probability</span>
+              <div className="flex items-center gap-3">
+                <div className="w-24 h-1.5 rounded-full bg-white/10 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(aiDetection?.score ?? 0) * 100}%` }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                    className={`h-full rounded-full ${
+                      (aiDetection?.score ?? 0) > 0.6
+                        ? "bg-red-400"
+                        : (aiDetection?.score ?? 0) > 0.3
+                        ? "bg-amber-400"
+                        : "bg-green-400"
+                    }`}
+                  />
+                </div>
+                <span className="text-sm text-white/80 w-12 text-right">
+                  {Math.round((aiDetection?.score ?? 0) * 100)}%
+                </span>
+              </div>
+            </div>
+            {aiDetection?.signals.map((s, i) => (
+              <div key={i} className="flex items-start justify-between py-2 border-b border-white/5 last:border-0">
+                <span className="text-sm text-white/40">{s.name}</span>
+                <div className="text-right">
+                  <span className={`text-sm font-medium ${s.detected ? "text-red-400" : "text-green-400"}`}>
+                    {s.detected ? "Detected" : "Not detected"}
+                  </span>
+                  {s.detail && <p className="text-xs text-white/30 mt-0.5">{s.detail}</p>}
+                </div>
+              </div>
+            ))}
+            <Row
+              label="Detection source"
+              value={aiDetection?.provider === "hive" ? "Hive AI API" : "Local heuristics"}
+            />
+          </>
+        )}
+      </Section>
+
+      {/* File fingerprint */}
+      <Section title="File Fingerprint">
+        <Row label="SHA-256" value={`${fileInfo.hash.slice(0, 16)}…${fileInfo.hash.slice(-8)}`} mono />
+        <Row label="Type" value={fileInfo.type} />
+        <Row label="Size" value={formatBytes(fileInfo.size)} />
+        <Row label="Verified at" value={formatDate(result.verifiedAt) ?? result.verifiedAt} />
+        <Row label="Processing time" value={`${result.processingMs} ms`} />
+      </Section>
+
+      {/* Share */}
       <div className="glass rounded-2xl p-5 space-y-4">
         <h3 className="text-xs font-semibold text-white/30 uppercase tracking-widest">Share Verification</h3>
-
         <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-3">
           <span className="text-sm text-white/40 flex-1 truncate">{shareUrl}</span>
           <button
@@ -324,7 +373,6 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
             Copy
           </button>
         </div>
-
         <div className="flex gap-2 flex-wrap">
           <a
             href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
@@ -359,7 +407,6 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
         </div>
       </div>
 
-      {/* Verify another */}
       <button
         onClick={onReset}
         className="w-full py-4 rounded-2xl glass border border-white/10 hover:border-white/20 hover:bg-white/8 text-white/60 hover:text-white transition-all text-sm font-medium"

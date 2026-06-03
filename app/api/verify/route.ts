@@ -3,6 +3,7 @@ import { verifyC2PA } from "@/lib/c2pa";
 import { detectAI } from "@/lib/aiDetection";
 import { extractExif } from "@/lib/exif";
 import { deriveVerdict } from "@/lib/verdict";
+import { runForensics } from "@/lib/forensics";
 import type { VerificationResult, VerifyRequest } from "@/lib/types";
 import { createHash } from "crypto";
 import { v4 as uuidv4 } from "uuid";
@@ -10,7 +11,7 @@ import { v4 as uuidv4 } from "uuid";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
+const MAX_SIZE = 50 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   const start = Date.now();
@@ -61,12 +62,11 @@ export async function POST(req: NextRequest) {
       extractExif(dataUrl),
     ]);
 
-    const aiDetection = await detectAI(
-      dataUrl,
-      fileType,
-      exif?.software ?? null,
-      !!(exif?.make)
-    );
+    const [aiDetection] = await Promise.all([
+      detectAI(dataUrl, fileType, exif?.software ?? null, !!(exif?.make)),
+    ]);
+
+    const forensics = runForensics(exif, dataUrl);
 
     const { verdict, confidence } = deriveVerdict(c2pa, aiDetection, exif);
 
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       c2pa,
       exif,
       aiDetection,
+      forensics,
       processingMs: Date.now() - start,
       verifiedAt: new Date().toISOString(),
     };

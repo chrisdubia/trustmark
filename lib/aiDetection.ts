@@ -1,9 +1,49 @@
 import type { AIDetectionResult, AISignal } from "./types";
 
-// Hive V3 API — uses Bearer auth with the Secret Key from Playground API Keys.
-// Endpoint: https://api.thehive.ai/api/v3/task/sync
-// Model: "ai-generated-image-detection" (va1 model family)
-async function callHive(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractClasses(d: any): Array<{ class: string; score: number }> {
+  return (
+    d?.status?.[0]?.response?.output?.[0]?.classes ??
+    d?.output?.[0]?.classes ??
+    d?.classes ??
+    []
+  );
+}
+
+async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
+  const apiKey = process.env.HIVE_API_KEY;
+  if (!apiKey || apiKey === "placeholder") return null;
+
+  try {
+    // V3 JSON body format — Bearer auth, base64 image
+    const res = await fetch("https://api.thehive.ai/api/v3/task/sync", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        image: { binary: base64 },
+        model: "ai-generated-image-detection",
+      }),
+      signal: AbortSignal.timeout(12000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const classes = extractClasses(data);
+      if (classes.length) return buildResult(classes, "hive");
+    } else {
+      const text = await res.text().catch(() => "");
+      console.error(`[hive v3 json] ${res.status}: ${text.slice(0, 200)}`);
+    }
+  } catch (e) {
+    console.error("[hive v3 json] error:", e);
+  }
+  return null;
+}
+
+async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
@@ -11,97 +51,81 @@ async function callHive(base64: string, mimeType: string): Promise<AIDetectionRe
     const buf = Buffer.from(base64, "base64");
     const blob = new Blob([buf], { type: mimeType });
     const formData = new FormData();
-    formData.append("media", blob, "media");
+    formData.append("media", blob, "image");
 
-    // Try V3 first
-    const v3Res = await fetch(
-      "https://api.thehive.ai/api/v3/task/sync?model=ai-generated-image-detection",
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: formData,
-        signal: AbortSignal.timeout(10000),
-      }
-    );
+    const res = await fetch("https://api.thehive.ai/api/v3/task/sync", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
+      signal: AbortSignal.timeout(12000),
+    });
 
-    if (v3Res.ok) {
-      const data = await v3Res.json();
-      return parseHiveV3Response(data);
+    if (res.ok) {
+      const data = await res.json();
+      const classes = extractClasses(data);
+      if (classes.length) return buildResult(classes, "hive");
+    } else {
+      const text = await res.text().catch(() => "");
+      console.error(`[hive v3 form] ${res.status}: ${text.slice(0, 200)}`);
     }
+  } catch (e) {
+    console.error("[hive v3 form] error:", e);
+  }
+  return null;
+}
 
-    // Fall back to V2 format in case this is a legacy key
-    const v2Res = await fetch("https://api.thehive.ai/api/v2/task/sync", {
+async function callHiveV2(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
+  const apiKey = process.env.HIVE_API_KEY;
+  if (!apiKey || apiKey === "placeholder") return null;
+
+  try {
+    const buf = Buffer.from(base64, "base64");
+    const blob = new Blob([buf], { type: mimeType });
+    const formData = new FormData();
+    formData.append("media", blob, "image");
+
+    const res = await fetch("https://api.thehive.ai/api/v2/task/sync", {
       method: "POST",
       headers: { Authorization: `Token ${apiKey}` },
       body: formData,
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(12000),
     });
 
-    if (v2Res.ok) {
-      const data = await v2Res.json();
-      return parseHiveV2Response(data);
+    if (res.ok) {
+      const data = await res.json();
+      const classes = extractClasses(data);
+      if (classes.length) return buildResult(classes, "hive");
+    } else {
+      const text = await res.text().catch(() => "");
+      console.error(`[hive v2] ${res.status}: ${text.slice(0, 200)}`);
     }
-
-    return null;
-  } catch {
-    return null;
+  } catch (e) {
+    console.error("[hive v2] error:", e);
   }
+  return null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractClasses(d: any): Array<{ class: string; score: number }> {
-  return (
-    d?.status?.[0]?.response?.output?.[0]?.classes ??
-    d?.output?.[0]?.classes ??
-    []
-  );
-}
-
-function parseHiveV3Response(data: unknown): AIDetectionResult | null {
-  try {
-    const d = data as Record<string, unknown>;
-
-    // V3 response: { status: [{ response: { output: [{ classes: [...] }] } }] }
-    // or: { output: [{ classes: [...] }] }
-    const classes: Array<{ class: string; score: number }> =
-      extractClasses(d);
-
-    if (!classes.length) return null;
-    return buildResult(classes);
-  } catch {
-    return null;
-  }
-}
-
-function parseHiveV2Response(data: unknown): AIDetectionResult | null {
-  try {
-    const d = data as Record<string, unknown>;
-    const classes: Array<{ class: string; score: number }> =
-      extractClasses(d);
-
-    if (!classes.length) return null;
-    return buildResult(classes);
-  } catch {
-    return null;
-  }
-}
-
-function buildResult(classes: Array<{ class: string; score: number }>): AIDetectionResult {
+function buildResult(
+  classes: Array<{ class: string; score: number }>,
+  provider: "hive"
+): AIDetectionResult {
   const get = (name: string) =>
     classes.find((c) => c.class === name)?.score ?? 0;
 
-  const aiScore = get("ai_generated");
+  const aiScore = Math.max(
+    get("ai_generated"),
+    get("synthetic"),
+    get("fake"),
+    get("generated")
+  );
   const notAiScore = get("not_ai_generated");
-
-  // Some Hive models use different class names
-  const syntheticScore = get("synthetic") || get("fake") || get("generated");
-  const finalScore = Math.max(aiScore, syntheticScore);
+  const deepfakeScore = get("deepfake") + get("face_swap");
 
   const signals: AISignal[] = [
     {
       name: "AI Generated",
-      detected: finalScore > 0.5,
-      detail: `${(finalScore * 100).toFixed(1)}% probability`,
+      detected: aiScore > 0.5,
+      detail: `${(aiScore * 100).toFixed(1)}% probability`,
     },
     {
       name: "Not AI Generated",
@@ -110,7 +134,15 @@ function buildResult(classes: Array<{ class: string; score: number }>): AIDetect
     },
   ];
 
-  return { score: finalScore, signals, provider: "hive" };
+  if (deepfakeScore > 0.01) {
+    signals.push({
+      name: "Deepfake / Face Swap",
+      detected: deepfakeScore > 0.5,
+      detail: `${(deepfakeScore * 100).toFixed(1)}% probability`,
+    });
+  }
+
+  return { score: aiScore, signals, provider };
 }
 
 const AI_GENERATOR_KEYWORDS = [
@@ -137,13 +169,9 @@ const EDITING_SOFTWARE = [
   "luminar", "pixelmator", "canva",
 ];
 
-function localHeuristics(
-  software: string | null,
-  hasCamera: boolean
-): AIDetectionResult {
+function localHeuristics(software: string | null, hasCamera: boolean): AIDetectionResult {
   const signals: AISignal[] = [];
   let score = 0;
-
   const sw = (software ?? "").toLowerCase();
 
   const aiMatch = AI_GENERATOR_KEYWORDS.find((k) => sw.includes(k.keyword));
@@ -186,16 +214,19 @@ export async function detectAI(
   hasCamera: boolean
 ): Promise<AIDetectionResult> {
   const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-
-  const hive = await callHive(base64, mimeType);
-  if (hive) return hive;
-
   const hasKey = !!process.env.HIVE_API_KEY && process.env.HIVE_API_KEY !== "placeholder";
-  const local = localHeuristics(software, hasCamera);
 
-  if (!hasKey) {
-    return { ...local, unavailable: true };
+  if (hasKey) {
+    // Try all Hive endpoints in order
+    const result =
+      (await callHiveV3Json(base64, mimeType)) ??
+      (await callHiveV3Form(base64, mimeType)) ??
+      (await callHiveV2(base64, mimeType));
+
+    if (result) return result;
   }
 
+  const local = localHeuristics(software, hasCamera);
+  if (!hasKey) return { ...local, unavailable: true };
   return local;
 }

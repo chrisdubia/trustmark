@@ -1,5 +1,22 @@
 import type { ExifData } from "./types";
 
+function formatSoftware(raw: string | null): string | null {
+  if (!raw) return null;
+  const s = raw.trim();
+  // iOS stores just the version number e.g. "26.5" — make it readable
+  if (/^\d+\.\d+(\.\d+)?$/.test(s)) return `iOS ${s}`;
+  // Android sometimes stores just a number
+  if (/^\d+$/.test(s)) return `Android ${s}`;
+  return s;
+}
+
+function formatShutterSpeed(seconds: number | null): string | null {
+  if (seconds === null) return null;
+  if (seconds >= 1) return `${seconds}s`;
+  const denom = Math.round(1 / seconds);
+  return `1/${denom}s`;
+}
+
 export async function extractExif(dataUrl: string): Promise<ExifData | null> {
   try {
     const exifr = (await import("exifr")).default;
@@ -16,7 +33,6 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
       translateKeys: true,
       translateValues: true,
       reviveValues: true,
-      // Parse GPS as decimal degrees automatically
       gps: true,
     });
 
@@ -32,7 +48,6 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
       };
     }
 
-    // exifr with gps:true returns latitude/longitude as decimal floats directly
     const lat: number | null = raw.latitude ?? raw.GPSLatitude ?? null;
     const lon: number | null = raw.longitude ?? raw.GPSLongitude ?? null;
     const alt: number | null = raw.GPSAltitude ?? null;
@@ -53,7 +68,7 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
     return {
       make: raw.Make ?? null,
       model: raw.Model ?? null,
-      software: raw.Software ?? null,
+      software: formatSoftware(raw.Software ?? null),
       dateTimeOriginal: toIso(raw.DateTimeOriginal ?? raw.DateTimeDigitized),
       dateTimeModified: toIso(raw.ModifyDate ?? raw.DateTime),
       gps: lat !== null && lon !== null ? { lat, lon } : null,
@@ -63,20 +78,11 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
       lensModel: raw.LensModel ?? null,
       focalLength: toFloat(raw.FocalLength),
       aperture: toFloat(raw.FNumber ?? raw.ApertureValue),
-      shutterSpeed: raw.ExposureTime
-        ? formatShutterSpeed(toFloat(raw.ExposureTime))
-        : null,
+      shutterSpeed: formatShutterSpeed(toFloat(raw.ExposureTime)),
       iso: raw.ISO ?? raw.ISOSpeedRatings ?? null,
       hasStrippedMetadata: !raw.Make && !raw.Model && !raw.Software,
     };
   } catch {
     return null;
   }
-}
-
-function formatShutterSpeed(seconds: number | null): string | null {
-  if (seconds === null) return null;
-  if (seconds >= 1) return `${seconds}s`;
-  const denom = Math.round(1 / seconds);
-  return `1/${denom}s`;
 }

@@ -49,6 +49,23 @@ export interface AIDetectionResult {
   unavailable?: boolean;
 }
 
+export interface ForensicSignal {
+  id: string;
+  label: string;
+  status: "pass" | "warn" | "fail" | "info";
+  detail: string;
+}
+
+export interface ForensicsResult {
+  signals: ForensicSignal[];
+  thumbnailMismatch: boolean | null;
+  suspiciousAspectRatio: boolean;
+  metadataConsistent: boolean;
+  timezoneMatch: boolean | null;
+  modifiedAfterCapture: boolean | null;
+  estimatedOrigin: "camera" | "screenshot" | "web" | "ai_likely" | "unknown";
+}
+
 export interface VerificationResult {
   id: string;
   verdict: VerdictType;
@@ -62,6 +79,7 @@ export interface VerificationResult {
   c2pa: C2PAResult | null;
   exif: ExifData | null;
   aiDetection: AIDetectionResult | null;
+  forensics: ForensicsResult | null;
   processingMs: number;
   verifiedAt: string;
   error?: string;
