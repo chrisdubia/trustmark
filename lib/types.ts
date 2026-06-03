@@ -83,6 +83,10 @@ export interface VerificationResult {
   processingMs: number;
   verifiedAt: string;
   error?: string;
+  previouslySeenCount?: number;
+  firstSeenAt?: string | null;
+  knownFakeFlag?: boolean;
+  knownFakeMessage?: string;
 }
 
 export interface VerifyRequest {

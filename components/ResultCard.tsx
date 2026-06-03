@@ -6,6 +6,7 @@ import type { VerificationResult } from "@/lib/types";
 import ELAViewer from "./ELAViewer";
 import VerificationCertificate from "./VerificationCertificate";
 import { generateCertificatePDF } from "@/lib/generateCertificate";
+import { exportVerificationJSON } from "@/lib/exportJson";
 
 interface ResultCardProps {
   result: VerificationResult;
@@ -164,6 +165,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
   const { exif, c2pa, aiDetection, forensics, fileInfo, confidence } = result;
   const [copied, setCopied] = useState(false);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [exportingJson, setExportingJson] = useState(false);
   const certRef = useRef<HTMLDivElement>(null);
 
   const mapsUrl = exif?.gps
@@ -276,6 +278,22 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
       >
         {/* LEFT COLUMN */}
         <div style={{ padding: 40, borderRight: "1px solid #D8D5CE" }}>
+
+          {/* Known fake warning banner */}
+          {result.knownFakeFlag && (
+            <div style={{
+              background: "#FFF8EC",
+              border: "1px solid #C4882A",
+              borderRadius: 2,
+              padding: "12px 16px",
+              marginBottom: 24,
+            }}>
+              <div style={{ ...monoStyle, fontSize: 9, textTransform: "uppercase", letterSpacing: "0.12em", color: "#C4882A", marginBottom: 6 }}>Previously flagged</div>
+              <div style={{ ...epilogueStyle, fontWeight: 300, fontSize: 13, color: "#5A5855", lineHeight: 1.6 }}>
+                {result.knownFakeMessage} It has been submitted {(result.previouslySeenCount ?? 0) + 1} times total.
+              </div>
+            </div>
+          )}
 
           {/* Verdict block */}
           <div style={{ borderBottom: "1px solid #D8D5CE", marginBottom: 32, paddingBottom: 32 }}>
@@ -585,6 +603,17 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
               <button onClick={copyAsText} style={btnOutline}>
                 Copy as text
               </button>
+              <button
+                onClick={() => {
+                  setExportingJson(true);
+                  exportVerificationJSON(result);
+                  setTimeout(() => setExportingJson(false), 500);
+                }}
+                disabled={exportingJson}
+                style={{ ...btnOutline, opacity: exportingJson ? 0.6 : 1 }}
+              >
+                {exportingJson ? "Exporting…" : "Export JSON"}
+              </button>
               <button onClick={downloadPdf} disabled={generatingPdf} style={{ ...btnSolid, opacity: generatingPdf ? 0.6 : 1 }}>
                 {generatingPdf ? "Generating certificate…" : "Download PDF"}
               </button>
@@ -655,6 +684,9 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
           sha256={fileInfo.hash}
           verifiedAt={result.verifiedAt}
           processingTime={result.processingMs}
+          knownFakeFlag={result.knownFakeFlag}
+          knownFakeMessage={result.knownFakeMessage}
+          previouslySeenCount={result.previouslySeenCount}
         />
       </div>
     </motion.div>

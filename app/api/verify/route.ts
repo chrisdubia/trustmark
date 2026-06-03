@@ -4,6 +4,7 @@ import { detectAI } from "@/lib/aiDetection";
 import { extractExif } from "@/lib/exif";
 import { deriveVerdict } from "@/lib/verdict";
 import { runForensics } from "@/lib/forensics";
+import { checkAndRecordHash } from "@/lib/knownFakes";
 import type { VerificationResult, VerifyRequest } from "@/lib/types";
 import { createHash } from "crypto";
 import { v4 as uuidv4 } from "uuid";
@@ -74,6 +75,8 @@ export async function POST(req: NextRequest) {
 
     const { verdict, confidence } = deriveVerdict(c2pa, aiDetection, exif);
 
+    const knownFakes = await checkAndRecordHash(hash, verdict, confidence, fileName);
+
     const result: VerificationResult = {
       id: uuidv4(),
       verdict,
@@ -85,6 +88,7 @@ export async function POST(req: NextRequest) {
       forensics,
       processingMs: Date.now() - start,
       verifiedAt: new Date().toISOString(),
+      ...knownFakes,
     };
 
     return NextResponse.json(result);

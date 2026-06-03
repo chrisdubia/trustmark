@@ -31,6 +31,9 @@ export interface CertificateProps {
   sha256: string;
   verifiedAt: string;
   processingTime: number;
+  knownFakeFlag?: boolean;
+  knownFakeMessage?: string;
+  previouslySeenCount?: number;
 }
 
 const VERDICT_COLOR: Record<string, string> = {
@@ -100,6 +103,7 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
     forensicChecks, aiProbability, aiDetected,
     c2paManifest, c2paSignatureValid, c2paEditCount,
     sha256, verifiedAt, processingTime,
+    knownFakeFlag, knownFakeMessage, previouslySeenCount,
   } = props;
 
   const verdictColor = VERDICT_COLOR[verdict] ?? "#B85050";
@@ -169,6 +173,16 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
             </div>
           </div>
 
+          {/* Known fake warning */}
+          {knownFakeFlag && (
+            <div style={{ padding: "12px 28px", background: "#FFF8EC", borderBottom: "1px solid #C4882A", borderTop: "1px solid #C4882A" }}>
+              <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#C4882A", marginBottom: 4 }}>Previously flagged</div>
+              <div style={{ ...epilogue, fontSize: 11, fontWeight: 300, color: "#5A5855", lineHeight: 1.65 }}>
+                {knownFakeMessage} It has been submitted {(previouslySeenCount ?? 0) + 1} times total.
+              </div>
+            </div>
+          )}
+
           {/* Two-column body */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", borderBottom: "1px solid #D8D5CE" }}>
             {/* Left column */}
@@ -235,7 +249,8 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           <div style={{ padding: "14px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FAFAF8" }}>
             <div>
               <div style={{ ...mono, fontSize: 9, color: "#4A7A9B", letterSpacing: "0.05em", marginBottom: 3 }}>{verifyUrl}</div>
-              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em" }}>Generated {verifiedDate} · EST · Stateless · No images stored · TrustMark Phase 1</div>
+              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em", marginBottom: 2 }}>Generated {verifiedDate} · EST · Stateless · No images stored · TrustMark Phase 1</div>
+              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em" }}>Machine-readable JSON export available at trustmark.io</div>
             </div>
             <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.1em", textTransform: "uppercase" }}>Page 1 of 1</div>
             <div style={{ width: 56, height: 56, border: "1px solid #C8C5BE", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, flexShrink: 0 }}>
