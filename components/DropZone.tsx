@@ -124,8 +124,8 @@ export default function DropZone({ onFile, disabled }: DropZoneProps) {
 
         <div style={{
           fontFamily: "'DM Mono', monospace",
-          fontSize: 10,
-          color: "#B0ADA6",
+          fontSize: 12,
+          color: "#7A7870",
           textAlign: "center",
         }}>
           JPG · PNG · WebP · HEIC · MP4 · MOV · max 50 MB
@@ -165,8 +165,8 @@ export default function DropZone({ onFile, disabled }: DropZoneProps) {
           disabled={disabled}
           style={{
             fontFamily: "'DM Mono', monospace",
-            fontSize: 10,
-            color: "#B0ADA6",
+            fontSize: 12,
+            color: "#7A7870",
             background: "none",
             border: "none",
             cursor: "pointer",

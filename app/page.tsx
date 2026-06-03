@@ -217,8 +217,8 @@ export default function Home() {
                 <p style={{
                   fontFamily: "'Epilogue', sans-serif",
                   fontWeight: 300,
-                  fontSize: 14,
-                  color: "#8A8880",
+                  fontSize: 15,
+                  color: "#5A5855",
                   maxWidth: 400,
                   marginTop: 16,
                   lineHeight: 1.6,
@@ -241,8 +241,8 @@ export default function Home() {
                       {i > 0 && <span style={{ color: "#D8D5CE", fontSize: 10 }}>·</span>}
                       <span style={{
                         fontFamily: "'DM Mono', monospace",
-                        fontSize: 10,
-                        color: "#B0ADA6",
+                        fontSize: 11,
+                        color: "#7A7870",
                       }}>{tag}</span>
                     </span>
                   ))}
@@ -310,14 +310,14 @@ export default function Home() {
                       <div style={{
                         fontFamily: "'Epilogue', sans-serif",
                         fontWeight: 400,
-                        fontSize: 14,
+                        fontSize: 15,
                         color: "#1C1C1A",
                         marginBottom: 4,
                       }}>{item.title}</div>
                       <div style={{
                         fontFamily: "'DM Mono', monospace",
-                        fontSize: 10,
-                        color: "#B0ADA6",
+                        fontSize: 12,
+                        color: "#5A5855",
                         lineHeight: 1.5,
                       }}>{item.detail}</div>
                     </div>
