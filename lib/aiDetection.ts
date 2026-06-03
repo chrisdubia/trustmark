@@ -2,8 +2,12 @@ import type { AIDetectionResult, AISignal } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractClasses(d: any): Array<{ class: string; score: number }> {
+  // V3 response shape: { status: [{ response: { output: [{ classes: [...] }] } }] }
+  // or top-level:      { output: [{ classes: [...] }] }
+  // or nested input:   { status: [{ response: { output: [{ input: { classes: [...] } }] } }] }
   return (
     d?.status?.[0]?.response?.output?.[0]?.classes ??
+    d?.status?.[0]?.response?.output?.[0]?.input?.classes ??
     d?.output?.[0]?.classes ??
     d?.classes ??
     []
@@ -12,71 +16,73 @@ function extractClasses(d: any): Array<{ class: string; score: number }> {
 
 // Hive V3 Playground API — model name goes in the URL path, not query string.
 // The sf1/va1 model family for AI-generated image detection.
-const HIVE_V3_MODELS = [
-  "hive/ai-generated-and-deepfake-content-detection",
-  "ai-generated-and-deepfake-content-detection",
-];
+const HIVE_V3_ENDPOINT =
+  "https://api.thehive.ai/api/v3/hive/ai-generated-and-deepfake-content-detection";
 
+// V3 API requires a publicly accessible URL — upload image as data URI inline
 async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
-  for (const model of HIVE_V3_MODELS) {
-    try {
-      const res = await fetch(`https://api.thehive.ai/api/v3/task/sync/${model}`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ image: { binary: base64 } }),
-        signal: AbortSignal.timeout(12000),
-      });
+  try {
+    // Use data URI as media_url — Hive accepts inline data URIs
+    const dataUri = `data:${mimeType};base64,${base64}`;
 
-      if (res.ok) {
-        const data = await res.json();
-        const classes = extractClasses(data);
-        if (classes.length) return buildResult(classes, "hive");
-      } else {
-        const text = await res.text().catch(() => "");
-        console.error(`[hive v3 json/${model}] ${res.status}: ${text.slice(0, 200)}`);
-      }
-    } catch (e) {
-      console.error(`[hive v3 json/${model}] error:`, e);
+    const res = await fetch(HIVE_V3_ENDPOINT, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: [{ media_url: dataUri }],
+      }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const classes = extractClasses(data);
+      if (classes.length) return buildResult(classes, "hive");
+      console.error("[hive v3] 200 but no classes in response:", JSON.stringify(data).slice(0, 300));
+    } else {
+      const text = await res.text().catch(() => "");
+      console.error(`[hive v3] ${res.status}: ${text.slice(0, 300)}`);
     }
+  } catch (e) {
+    console.error("[hive v3] error:", e);
   }
   return null;
 }
 
+// Multipart fallback — send raw binary
 async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
-  for (const model of HIVE_V3_MODELS) {
-    try {
-      const buf = Buffer.from(base64, "base64");
-      const blob = new Blob([buf], { type: mimeType });
-      const formData = new FormData();
-      formData.append("media", blob, "image");
+  try {
+    const buf = Buffer.from(base64, "base64");
+    const blob = new Blob([buf], { type: mimeType });
+    const formData = new FormData();
+    formData.append("media", blob, "image");
 
-      const res = await fetch(`https://api.thehive.ai/api/v3/task/sync/${model}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}` },
-        body: formData,
-        signal: AbortSignal.timeout(12000),
-      });
+    const res = await fetch(HIVE_V3_ENDPOINT, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
+      signal: AbortSignal.timeout(15000),
+    });
 
-      if (res.ok) {
-        const data = await res.json();
-        const classes = extractClasses(data);
-        if (classes.length) return buildResult(classes, "hive");
-      } else {
-        const text = await res.text().catch(() => "");
-        console.error(`[hive v3 form/${model}] ${res.status}: ${text.slice(0, 200)}`);
-      }
-    } catch (e) {
-      console.error(`[hive v3 form/${model}] error:`, e);
+    if (res.ok) {
+      const data = await res.json();
+      const classes = extractClasses(data);
+      if (classes.length) return buildResult(classes, "hive");
+    } else {
+      const text = await res.text().catch(() => "");
+      console.error(`[hive v3 form] ${res.status}: ${text.slice(0, 300)}`);
     }
+  } catch (e) {
+    console.error("[hive v3 form] error:", e);
   }
   return null;
 }
