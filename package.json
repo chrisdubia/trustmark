@@ -10,7 +10,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@clerk/nextjs": "^7.4.3",
+    "@clerk/nextjs": "^6.39.5",
     "@stripe/stripe-js": "^9.7.0",
     "@vercel/kv": "^3.0.0",
     "@vercel/postgres": "^0.10.0",
