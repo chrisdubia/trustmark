@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import type { VerificationResult } from "@/lib/types";
 import ELAViewer from "./ELAViewer";
+import VerificationCertificate from "./VerificationCertificate";
+import { generateCertificatePDF } from "@/lib/generateCertificate";
 
 interface ResultCardProps {
   result: VerificationResult;
@@ -161,6 +163,8 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
   const cfg = VERDICT_CONFIG[result.verdict];
   const { exif, c2pa, aiDetection, forensics, fileInfo, confidence } = result;
   const [copied, setCopied] = useState(false);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const certRef = useRef<HTMLDivElement>(null);
 
   const mapsUrl = exif?.gps
     ? `https://maps.google.com/?q=${exif.gps.lat},${exif.gps.lon}`
@@ -241,132 +245,14 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
   };
 
   const downloadPdf = async () => {
-    const { jsPDF } = await import("jspdf");
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
-    const W = 595;
-    let y = 40;
-
-    // Header
-    doc.setFontSize(18);
-    doc.setFont("helvetica", "bold");
-    doc.text("TrustMark", 40, y);
-    y += 20;
-    doc.setFontSize(8);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(160, 157, 150);
-    doc.text("trustmark-pearl.vercel.app · Stateless verification · No images stored", 40, y);
-    y += 24;
-
-    // Accent bar
-    const accentHex = cfg.color;
-    const r = parseInt(accentHex.slice(1, 3), 16);
-    const g = parseInt(accentHex.slice(3, 5), 16);
-    const b = parseInt(accentHex.slice(5, 7), 16);
-    doc.setFillColor(r, g, b);
-    doc.rect(40, y, 3, 48, "F");
-
-    // Verdict block
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(r, g, b);
-    doc.text(result.verdict, 52, y + 20);
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(28, 28, 26);
-    doc.text(cfg.title, 52, y + 36);
-    doc.setFontSize(9);
-    doc.setTextColor(138, 136, 128);
-    doc.text(`Confidence: ${confidence}%`, 52, y + 50);
-    y += 72;
-
-    // File info
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(176, 173, 166);
-    doc.text("FILE INFORMATION", 40, y);
-    y += 14;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(28, 28, 26);
-    doc.setFontSize(9);
-    const fileLines = [
-      `Name: ${fileInfo.name}`,
-      `Size: ${formatBytes(fileInfo.size)}  ·  Type: ${fileInfo.type}`,
-      `SHA-256: ${fileInfo.hash}`,
-    ];
-    fileLines.forEach((line) => { doc.text(line, 40, y); y += 14; });
-    y += 8;
-
-    // Forensics
-    if (forensics && forensics.signals.length > 0) {
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(176, 173, 166);
-      doc.text("FORENSIC ANALYSIS", 40, y);
-      y += 14;
-      forensics.signals.forEach((s) => {
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(9);
-        doc.setTextColor(28, 28, 26);
-        doc.text(`[${s.status.toUpperCase()}] ${s.label}`, 40, y);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(138, 136, 128);
-        const wrapped = doc.splitTextToSize(s.detail, W - 80);
-        wrapped.forEach((line: string) => { y += 12; doc.text(line, 48, y); });
-        y += 10;
-      });
+    if (!certRef.current || generatingPdf) return;
+    setGeneratingPdf(true);
+    try {
+      const certId = `TM-${new Date().getFullYear()}-${result.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
+      await generateCertificatePDF(certRef.current, certId, fileInfo.name);
+    } finally {
+      setGeneratingPdf(false);
     }
-
-    // Capture info
-    if (hasExif) {
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(176, 173, 166);
-      doc.text("CAPTURE INFORMATION", 40, y);
-      y += 14;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.setTextColor(28, 28, 26);
-      if (exif?.make || exif?.model) { doc.text(`Device: ${[exif?.make, exif?.model].filter(Boolean).join(" ")}`, 40, y); y += 14; }
-      if (exif?.dateTimeOriginal) { doc.text(`Captured: ${formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal}`, 40, y); y += 14; }
-      if (exif?.gps) { doc.text(`GPS: ${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`, 40, y); y += 14; }
-      y += 4;
-    }
-
-    // AI Detection
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(176, 173, 166);
-    doc.text("AI DETECTION", 40, y);
-    y += 14;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(28, 28, 26);
-    doc.text(`AI Probability: ${Math.round((aiDetection?.score ?? 0) * 100)}%`, 40, y);
-    y += 14;
-
-    // C2PA
-    doc.setFontSize(7);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(176, 173, 166);
-    doc.text("C2PA PROVENANCE", 40, y);
-    y += 14;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(28, 28, 26);
-    doc.text(`Manifest: ${c2pa?.hasCertificate ? "Present" : "None"}  ·  Valid: ${c2pa?.valid ? "Yes" : "No"}`, 40, y);
-    y += 20;
-
-    // Footer
-    doc.setFontSize(7);
-    doc.setTextColor(160, 157, 150);
-    doc.text(`Verification URL: ${shareUrl}`, 40, y);
-    y += 12;
-    doc.text(`Generated: ${formatDate(result.verifiedAt) ?? result.verifiedAt}  ·  Processing: ${result.processingMs} ms`, 40, y);
-    y += 12;
-    doc.text("Generated by TrustMark · trustmark-pearl.vercel.app · Stateless verification · No images stored", 40, y);
-
-    doc.save(`trustmark-${result.verdict.toLowerCase()}-${fileInfo.name}.pdf`);
   };
 
   const tweetText = `I verified this image using @TrustMark. Verdict: ${result.verdict} (${confidence}% confidence). ${shareUrl}`;
@@ -699,8 +585,8 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
               <button onClick={copyAsText} style={btnOutline}>
                 Copy as text
               </button>
-              <button onClick={downloadPdf} style={btnSolid}>
-                Download PDF
+              <button onClick={downloadPdf} disabled={generatingPdf} style={{ ...btnSolid, opacity: generatingPdf ? 0.6 : 1 }}>
+                {generatingPdf ? "Generating certificate…" : "Download PDF"}
               </button>
               <a
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`}
@@ -732,6 +618,45 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
           }
         }
       `}</style>
+
+      {/* Off-screen certificate for PDF capture */}
+      <div style={{ position: "absolute", left: -9999, top: -9999, pointerEvents: "none" }}>
+        <VerificationCertificate
+          ref={certRef}
+          verificationId={result.id}
+          filename={fileInfo.name}
+          filesize={formatBytes(fileInfo.size)}
+          filetype={fileInfo.type}
+          verdict={result.verdict}
+          confidence={confidence}
+          captureDevice={[exif?.make, exif?.model].filter(Boolean).join(" ") || undefined}
+          lens={exif?.lensModel ?? undefined}
+          capturedAt={exif?.dateTimeOriginal ? (formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal) : undefined}
+          resolution={exif?.width && exif?.height ? `${exif.width} × ${exif.height} px` : undefined}
+          cameraSettings={[
+            exif?.focalLength ? `${exif.focalLength}mm` : null,
+            exif?.aperture ? `f/${exif.aperture}` : null,
+            exif?.shutterSpeed ?? null,
+            exif?.iso ? `ISO ${exif.iso}` : null,
+          ].filter(Boolean).join("  ·  ") || undefined}
+          gpsCoordinates={exif?.gps ? `${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}` : undefined}
+          altitude={exif?.altitude != null ? `${exif.altitude} m` : undefined}
+          software={exif?.software ?? undefined}
+          forensicChecks={(forensics?.signals ?? []).map((s) => ({
+            status: s.status as "pass" | "warn" | "info" | "fail",
+            title: s.label,
+            detail: s.detail,
+          }))}
+          aiProbability={aiScore}
+          aiDetected={!!(aiDetection?.signals?.some((s) => s.name.toLowerCase().includes("ai generated") && s.detected))}
+          c2paManifest={!!(c2pa?.hasCertificate)}
+          c2paSignatureValid={!!(c2pa?.valid)}
+          c2paEditCount={c2pa?.editCount ?? 0}
+          sha256={fileInfo.hash}
+          verifiedAt={result.verifiedAt}
+          processingTime={result.processingMs}
+        />
+      </div>
     </motion.div>
   );
 }
