@@ -19,14 +19,30 @@ function extractClasses(d: any): Array<{ class: string; score: number }> {
 const HIVE_V3_ENDPOINT =
   "https://api.thehive.ai/api/v3/hive/ai-generated-and-deepfake-content-detection";
 
-// V3 API requires a publicly accessible URL — upload image as data URI inline
+// Resize image to max 1024px on longest side and re-encode as JPEG at 85%
+// to keep payload under Hive's size limit (~1.5MB).
+async function resizeImage(base64: string, mimeType: string): Promise<{ base64: string; mime: string }> {
+  try {
+    const sharp = (await import("sharp")).default;
+    const buf = Buffer.from(base64, "base64");
+    const resized = await sharp(buf)
+      .resize({ width: 1024, height: 1024, fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 85 })
+      .toBuffer();
+    return { base64: resized.toString("base64"), mime: "image/jpeg" };
+  } catch {
+    // sharp not available — return original truncated to avoid timeout
+    return { base64, mime: mimeType };
+  }
+}
+
 async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
   try {
-    // Use data URI as media_url — Hive accepts inline data URIs
-    const dataUri = `data:${mimeType};base64,${base64}`;
+    const { base64: resizedB64, mime } = await resizeImage(base64, mimeType);
+    const dataUri = `data:${mime};base64,${resizedB64}`;
 
     const res = await fetch(HIVE_V3_ENDPOINT, {
       method: "POST",
@@ -34,9 +50,7 @@ async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetec
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        input: [{ media_url: dataUri }],
-      }),
+      body: JSON.stringify({ input: [{ media_url: dataUri }] }),
       signal: AbortSignal.timeout(15000),
     });
 
@@ -44,7 +58,7 @@ async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetec
       const data = await res.json();
       const classes = extractClasses(data);
       if (classes.length) return buildResult(classes, "hive");
-      console.error("[hive v3] 200 but no classes in response:", JSON.stringify(data).slice(0, 300));
+      console.error("[hive v3] 200 but no classes:", JSON.stringify(data).slice(0, 300));
     } else {
       const text = await res.text().catch(() => "");
       console.error(`[hive v3] ${res.status}: ${text.slice(0, 300)}`);
@@ -55,16 +69,17 @@ async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetec
   return null;
 }
 
-// Multipart fallback — send raw binary
+// Multipart fallback
 async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
   try {
-    const buf = Buffer.from(base64, "base64");
-    const blob = new Blob([buf], { type: mimeType });
+    const { base64: resizedB64, mime } = await resizeImage(base64, mimeType);
+    const buf = Buffer.from(resizedB64, "base64");
+    const blob = new Blob([buf], { type: mime });
     const formData = new FormData();
-    formData.append("media", blob, "image");
+    formData.append("media", blob, "image.jpg");
 
     const res = await fetch(HIVE_V3_ENDPOINT, {
       method: "POST",
