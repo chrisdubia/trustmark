@@ -13,9 +13,8 @@ function extractClasses(d: any): Array<{ class: string; score: number }> {
 // Hive V3 Playground API — model name goes in the URL path, not query string.
 // The sf1/va1 model family for AI-generated image detection.
 const HIVE_V3_MODELS = [
-  "ai-generated-image-detection",
-  "ai_generated_image_detection",
-  "va1-ai-generated-image",
+  "hive/ai-generated-and-deepfake-content-detection",
+  "ai-generated-and-deepfake-content-detection",
 ];
 
 async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
