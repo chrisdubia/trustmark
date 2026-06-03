@@ -1,7 +1,10 @@
 import type { AIDetectionResult, AISignal } from "./types";
 
+// Hive V3 uses "value" field; V2 uses "score". Support both.
+type HiveClass = { class: string; score?: number; value?: number };
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractClasses(d: any): Array<{ class: string; score: number }> {
+function extractClasses(d: any): HiveClass[] {
   // Always log full response to diagnose structure
   console.log("[hive] raw response (full):", JSON.stringify(d));
 
@@ -127,17 +130,17 @@ async function callHiveV2(base64: string, mimeType: string): Promise<AIDetection
 }
 
 function buildResult(
-  classes: Array<{ class: string; score: number }>,
+  classes: HiveClass[],
   provider: "hive"
 ): AIDetectionResult {
-  // Normalize: lowercase + replace spaces/hyphens with underscores
   const normalize = (s: string) => s.toLowerCase().replace(/[\s\-]+/g, "_");
+  const val = (c: HiveClass | undefined) => c?.value ?? c?.score ?? 0;
   const get = (...names: string[]) => {
     const targets = names.map(normalize);
-    return classes.find((c) => targets.includes(normalize(c.class)))?.score ?? 0;
+    return val(classes.find((c) => targets.includes(normalize(c.class))));
   };
 
-  console.log("[hive] classes for scoring:", JSON.stringify(classes.map(c => ({ class: c.class, score: c.score }))));
+  console.log("[hive] classes for scoring:", JSON.stringify(classes.map(c => ({ class: c.class, value: val(c) }))));
 
   const aiScore = Math.max(
     get("ai_generated", "ai generated", "synthetic", "fake", "generated", "ai"),
