@@ -42,8 +42,13 @@ export function deriveVerdict(
     return { verdict: "MODIFIED", confidence: 75 };
   }
 
-  // Mild AI suspicion from local heuristics
-  if (aiScore >= 0.2) {
+  // Only flag SYNTHETIC from local heuristics if an AI software tag was
+  // positively identified — missing metadata alone is not enough signal.
+  const hasAISoftwareSignal = ai?.signals.some(
+    (s) => s.name === "AI Generator Identified" && s.detected
+  ) ?? false;
+
+  if (hasAISoftwareSignal) {
     return { verdict: "SYNTHETIC", confidence: Math.round(aiScore * 100) };
   }
 
@@ -52,5 +57,6 @@ export function deriveVerdict(
     return { verdict: "VERIFIED", confidence: 65 };
   }
 
+  // No positive signals either way → unknown
   return { verdict: "UNKNOWN", confidence: 30 };
 }
