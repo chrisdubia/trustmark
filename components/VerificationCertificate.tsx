@@ -151,17 +151,19 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           </div>
 
           {/* Verdict block */}
-          <div style={{ padding: "22px 28px", display: "flex", alignItems: "center", gap: 20, background: "#fff", borderBottom: "1px solid #D8D5CE" }}>
-            <div style={{ width: 5, height: 88, background: verdictColor, flexShrink: 0 }} />
-            <div>
+          <div style={{ padding: "22px 28px", display: "flex", alignItems: "flex-start", gap: 20, background: "#fff", borderBottom: "1px solid #D8D5CE" }}>
+            {/* Fix 1: bar and text share the same flex row with no extra offset */}
+            <div style={{ width: 5, alignSelf: "stretch", background: verdictColor, flexShrink: 0 }} />
+            <div style={{ flex: 1, paddingTop: 2 }}>
               <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: verdictColor, marginBottom: 6 }}>Verdict · {verdict.charAt(0) + verdict.slice(1).toLowerCase()}</div>
               <div style={{ ...epilogue, fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", color: "#1C1C1A", lineHeight: 1, marginBottom: 6 }}>{VERDICT_TITLE[verdict]}</div>
               <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880" }}>{VERDICT_SUB[verdict]}</div>
             </div>
-            <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 10 }}>
-              <div>
-                <div style={{ ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1, marginBottom: 2, color: verdictColor }}>{confidence}%</div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", textAlign: "right" }}>Confidence</div>
+            {/* Fix 2: confidence + label + QR stacked with clear separation, no overlap */}
+            <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0 }}>
+              <div style={{ textAlign: "right", marginBottom: 12 }}>
+                <div style={{ ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1, color: verdictColor }}>{confidence}%</div>
+                <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", marginTop: 4 }}>Confidence</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <div style={{ width: 72, height: 72, border: "1px solid #D8D5CE", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}>
@@ -241,10 +243,10 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
               <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em" }}>Generated {verifiedDate} · EST · Stateless · No images stored · TrustMark Phase 1</div>
             </div>
             <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.1em", textTransform: "uppercase" }}>Page 1 of 1</div>
-            <div style={{ width: 56, height: 56, border: "1px solid #C8C5BE", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1 }}>
-              <div style={{ ...mono, fontSize: 7, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0ADA6", textAlign: "center", lineHeight: 1.4 }}>Verified<br/>by</div>
-              <div style={{ ...mono, fontSize: 8, color: "#1C1C1A", letterSpacing: "0.1em" }}>TM·2026</div>
-              <div style={{ ...mono, fontSize: 6, letterSpacing: "0.06em", color: "#C0BDB6" }}>TRUSTMARK</div>
+            <div style={{ width: 56, height: 56, border: "1px solid #C8C5BE", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, flexShrink: 0 }}>
+              <div style={{ ...mono, fontSize: 6, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0ADA6", textAlign: "center", lineHeight: 1.3 }}>Verified by</div>
+              <div style={{ ...mono, fontSize: 8, color: "#1C1C1A", letterSpacing: "0.1em", textAlign: "center" }}>TM·2026</div>
+              <div style={{ ...mono, fontSize: 6, letterSpacing: "0.06em", color: "#C0BDB6", textAlign: "center" }}>TRUSTMARK</div>
             </div>
           </div>
 
