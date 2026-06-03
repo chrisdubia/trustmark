@@ -2,18 +2,36 @@ import type { AIDetectionResult, AISignal } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractClasses(d: any): Array<{ class: string; score: number }> {
-  // Log full response shape once to diagnose zero-score issue
-  console.log("[hive] raw response:", JSON.stringify(d).slice(0, 500));
+  // Always log full response to diagnose structure
+  console.log("[hive] raw response (full):", JSON.stringify(d));
 
-  // V3 shapes tried in order of likelihood
-  return (
-    d?.status?.[0]?.response?.output?.[0]?.classes ??
-    d?.status?.[0]?.response?.output?.[0]?.input?.classes ??
-    d?.[0]?.status?.[0]?.response?.output?.[0]?.classes ??
-    d?.output?.[0]?.classes ??
-    d?.classes ??
-    []
-  );
+  // V3 response: {status:[{response:{output:[{classes:[...]}]}}]}
+  // V3 alt: classes nested under each output item directly
+  const outputs =
+    d?.status?.[0]?.response?.output ??
+    d?.output ??
+    (Array.isArray(d) ? d?.[0]?.status?.[0]?.response?.output : null) ??
+    [];
+
+  // Collect classes from all output items (flatten)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const out of outputs as any[]) {
+    const classes = out?.classes ?? out?.input?.classes;
+    if (Array.isArray(classes) && classes.length > 0) {
+      console.log("[hive] found classes:", JSON.stringify(classes));
+      return classes;
+    }
+  }
+
+  // Direct fallbacks
+  const direct = d?.classes ?? d?.status?.[0]?.classes ?? [];
+  if (direct.length > 0) {
+    console.log("[hive] found direct classes:", JSON.stringify(direct));
+    return direct;
+  }
+
+  console.log("[hive] no classes found in response");
+  return [];
 }
 
 // Hive V3 Playground API — model name goes in the URL path, not query string.
@@ -36,12 +54,6 @@ async function resizeImage(base64: string, mimeType: string): Promise<{ base64: 
     // sharp not available — return original truncated to avoid timeout
     return { base64, mime: mimeType };
   }
-}
-
-async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
-  // JSON + data URI path removed — Hive rejects data URIs with 400.
-  // Use multipart form only.
-  return callHiveV3Form(base64, mimeType);
 }
 
 async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
@@ -226,9 +238,8 @@ export async function detectAI(
   const hasKey = !!process.env.HIVE_API_KEY && process.env.HIVE_API_KEY !== "placeholder";
 
   if (hasKey) {
-    // Try all Hive endpoints in order
+    // Try Hive V3 form, then V2 as fallback
     const result =
-      (await callHiveV3Json(base64, mimeType)) ??
       (await callHiveV3Form(base64, mimeType)) ??
       (await callHiveV2(base64, mimeType));
 
