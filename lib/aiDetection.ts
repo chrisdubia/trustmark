@@ -2,12 +2,14 @@ import type { AIDetectionResult, AISignal } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractClasses(d: any): Array<{ class: string; score: number }> {
-  // V3 response shape: { status: [{ response: { output: [{ classes: [...] }] } }] }
-  // or top-level:      { output: [{ classes: [...] }] }
-  // or nested input:   { status: [{ response: { output: [{ input: { classes: [...] } }] } }] }
+  // Log full response shape once to diagnose zero-score issue
+  console.log("[hive] raw response:", JSON.stringify(d).slice(0, 500));
+
+  // V3 shapes tried in order of likelihood
   return (
     d?.status?.[0]?.response?.output?.[0]?.classes ??
     d?.status?.[0]?.response?.output?.[0]?.input?.classes ??
+    d?.[0]?.status?.[0]?.response?.output?.[0]?.classes ??
     d?.output?.[0]?.classes ??
     d?.classes ??
     []
