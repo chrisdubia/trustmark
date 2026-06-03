@@ -22,6 +22,7 @@ export default function SignInPage() {
             <h1 style={{ ...epilogue, fontWeight: 300, fontSize: 28, letterSpacing: "-0.02em", color: "#1C1C1A" }}>Sign in to TrustMark</h1>
           </div>
           <SignIn
+            signUpUrl="/sign-up"
             appearance={{
               variables: {
                 colorPrimary: "#1C1C1A",

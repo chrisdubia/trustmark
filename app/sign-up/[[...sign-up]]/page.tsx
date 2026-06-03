@@ -22,6 +22,7 @@ export default function SignUpPage() {
             <h1 style={{ ...epilogue, fontWeight: 300, fontSize: 28, letterSpacing: "-0.02em", color: "#1C1C1A" }}>Create your account</h1>
           </div>
           <SignUp
+            signInUrl="/sign-in"
             appearance={{
               variables: {
                 colorPrimary: "#1C1C1A",
