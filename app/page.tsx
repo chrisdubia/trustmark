@@ -227,7 +227,7 @@ export default function Home() {
                   gap: 24,
                   marginTop: 24,
                 }}>
-                  {["Never stored", "Privacy first", "Free forever"].map((tag, i) => (
+                  {["Never stored", "Privacy first"].map((tag, i) => (
                     <span key={tag} style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {i > 0 && <span style={{ color: "#D8D5CE", fontSize: 10 }}>·</span>}
                       <span style={{
