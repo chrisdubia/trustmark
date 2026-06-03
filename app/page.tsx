@@ -150,24 +150,16 @@ export default function Home() {
           }}>TRUSTMARK</span>
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          {["How it works", "API"].map((label) => (
-            <span key={label} style={{
+          {([["How it works", "/how-it-works"], ["API", "/api"], ["Status", "/status"]] as [string, string][]).map(([label, href]) => (
+            <a key={label} href={href} style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
               textTransform: "uppercase",
               letterSpacing: "0.1em",
               color: "#A8A59E",
-              cursor: "default",
-            }}>{label}</span>
+              textDecoration: "none",
+            }}>{label}</a>
           ))}
-          <a href="/status" style={{
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 10,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "#A8A59E",
-            textDecoration: "none",
-          }}>Status</a>
         </nav>
       </header>
 
