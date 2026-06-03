@@ -37,39 +37,11 @@ async function resizeImage(base64: string, mimeType: string): Promise<{ base64: 
 }
 
 async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
-  const apiKey = process.env.HIVE_API_KEY;
-  if (!apiKey || apiKey === "placeholder") return null;
-
-  try {
-    const { base64: resizedB64, mime } = await resizeImage(base64, mimeType);
-    const dataUri = `data:${mime};base64,${resizedB64}`;
-
-    const res = await fetch(HIVE_V3_ENDPOINT, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ input: [{ media_url: dataUri }] }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (res.ok) {
-      const data = await res.json();
-      const classes = extractClasses(data);
-      if (classes.length) return buildResult(classes, "hive");
-      console.error("[hive v3] 200 but no classes:", JSON.stringify(data).slice(0, 300));
-    } else {
-      const text = await res.text().catch(() => "");
-      console.error(`[hive v3] ${res.status}: ${text.slice(0, 300)}`);
-    }
-  } catch (e) {
-    console.error("[hive v3] error:", e);
-  }
-  return null;
+  // JSON + data URI path removed — Hive rejects data URIs with 400.
+  // Use multipart form only.
+  return callHiveV3Form(base64, mimeType);
 }
 
-// Multipart fallback
 async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
@@ -77,24 +49,31 @@ async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetec
   try {
     const { base64: resizedB64, mime } = await resizeImage(base64, mimeType);
     const buf = Buffer.from(resizedB64, "base64");
-    const blob = new Blob([buf], { type: mime });
-    const formData = new FormData();
-    formData.append("media", blob, "image.jpg");
 
-    const res = await fetch(HIVE_V3_ENDPOINT, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: formData,
-      signal: AbortSignal.timeout(15000),
-    });
+    // Try both field names Hive might expect
+    for (const fieldName of ["media", "image", "file"]) {
+      const blob = new Blob([buf], { type: mime });
+      const formData = new FormData();
+      formData.append(fieldName, blob, `image.jpg`);
 
-    if (res.ok) {
-      const data = await res.json();
-      const classes = extractClasses(data);
-      if (classes.length) return buildResult(classes, "hive");
-    } else {
-      const text = await res.text().catch(() => "");
-      console.error(`[hive v3 form] ${res.status}: ${text.slice(0, 300)}`);
+      const res = await fetch(HIVE_V3_ENDPOINT, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: formData,
+        signal: AbortSignal.timeout(15000),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const classes = extractClasses(data);
+        if (classes.length) return buildResult(classes, "hive");
+        console.error(`[hive v3 form/${fieldName}] 200 no classes:`, JSON.stringify(data).slice(0, 300));
+      } else {
+        const text = await res.text().catch(() => "");
+        console.error(`[hive v3 form/${fieldName}] ${res.status}: ${text.slice(0, 200)}`);
+        // Don't retry other field names if auth fails
+        if (res.status === 401 || res.status === 403) break;
+      }
     }
   } catch (e) {
     console.error("[hive v3 form] error:", e);
