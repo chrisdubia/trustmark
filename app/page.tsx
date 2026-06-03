@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import DropZone from "@/components/DropZone";
 import ResultCard from "@/components/ResultCard";
 import ProgressBar from "@/components/ProgressBar";
+import NavAuth from "@/components/NavAuth";
 import type { VerificationResult } from "@/lib/types";
 
 type AppState = "idle" | "verifying" | "result" | "error";
@@ -160,6 +161,7 @@ export default function Home() {
               textDecoration: "none",
             }}>{label}</a>
           ))}
+          <NavAuth />
         </nav>
       </header>
 

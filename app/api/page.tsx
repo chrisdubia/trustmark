@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import NavAuth from "@/components/NavAuth";
 
 const mono = { fontFamily: "'DM Mono', monospace" } as const;
 const epilogue = { fontFamily: "'Epilogue', sans-serif" } as const;
@@ -23,10 +24,11 @@ export default function ApiPage() {
           </div>
           <span style={{ ...epilogue, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#1C1C1A" }}>Trustmark</span>
         </Link>
-        <div style={{ display: "flex", gap: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
           {([["How it works", "/how-it-works", false], ["API", "/api", true], ["Status", "/status", false]] as [string, string, boolean][]).map(([label, href, active]) => (
             <Link key={label} href={href} style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: active ? "#1C1C1A" : "#A8A59E", textDecoration: "none" }}>{label}</Link>
           ))}
+          <NavAuth />
         </div>
       </nav>
 

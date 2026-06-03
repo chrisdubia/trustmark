@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import NavAuth from "@/components/NavAuth";
 
 const mono = { fontFamily: "'DM Mono', monospace" } as const;
 const epilogue = { fontFamily: "'Epilogue', sans-serif" } as const;
@@ -70,6 +71,7 @@ function navHeader(activePage: string) {
             textDecoration: "none",
           }}>{label}</a>
         ))}
+        <NavAuth />
       </nav>
     </header>
   );
