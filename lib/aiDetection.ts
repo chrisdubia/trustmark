@@ -130,17 +130,20 @@ function buildResult(
   classes: Array<{ class: string; score: number }>,
   provider: "hive"
 ): AIDetectionResult {
-  const get = (name: string) =>
-    classes.find((c) => c.class === name)?.score ?? 0;
+  // Normalize: lowercase + replace spaces/hyphens with underscores
+  const normalize = (s: string) => s.toLowerCase().replace(/[\s\-]+/g, "_");
+  const get = (...names: string[]) => {
+    const targets = names.map(normalize);
+    return classes.find((c) => targets.includes(normalize(c.class)))?.score ?? 0;
+  };
+
+  console.log("[hive] classes for scoring:", JSON.stringify(classes.map(c => ({ class: c.class, score: c.score }))));
 
   const aiScore = Math.max(
-    get("ai_generated"),
-    get("synthetic"),
-    get("fake"),
-    get("generated")
+    get("ai_generated", "ai generated", "synthetic", "fake", "generated", "ai"),
   );
-  const notAiScore = get("not_ai_generated");
-  const deepfakeScore = get("deepfake") + get("face_swap");
+  const notAiScore = get("not_ai_generated", "not ai generated", "real", "authentic");
+  const deepfakeScore = get("deepfake", "deep_fake", "face_swap", "face swap");
 
   const signals: AISignal[] = [
     {
