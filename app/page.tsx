@@ -18,6 +18,29 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+// Compress image client-side to keep payload under 4MB (Vercel body limit).
+// Reads EXIF via original file, sends compressed copy to API.
+function compressImage(dataUrl: string, maxDimension = 2048, quality = 0.88): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl); // fallback to original
+    img.src = dataUrl;
+  });
+}
+
 export default function Home() {
   const [state, setState] = useState<AppState>("idle");
   const [result, setResult] = useState<VerificationResult | null>(null);
@@ -40,6 +63,8 @@ export default function Home() {
     // Show preview for images only
     if (file.type.startsWith("image/")) {
       setPreviewUrl(dataUrl);
+      // Compress before sending to stay under Vercel's 4MB body limit
+      dataUrl = await compressImage(dataUrl);
     } else {
       setPreviewUrl(null);
     }

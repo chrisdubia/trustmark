@@ -11,6 +11,10 @@ import { v4 as uuidv4 } from "uuid";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
+// Increase body size limit for App Router (default 4MB, images can be larger)
+export const fetchCache = "force-no-store";
+export const dynamic = "force-dynamic";
+
 const MAX_SIZE = 50 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
