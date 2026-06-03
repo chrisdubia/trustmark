@@ -151,13 +151,12 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           </div>
 
           {/* Verdict block */}
-          <div style={{ padding: "22px 28px", display: "flex", alignItems: "flex-start", gap: 20, background: "#fff", borderBottom: "1px solid #D8D5CE" }}>
-            {/* Fix 1: bar and text share the same flex row with no extra offset */}
+          <div style={{ padding: "22px 28px", display: "flex", alignItems: "flex-start", background: "#fff", borderBottom: "1px solid #D8D5CE" }}>
             <div style={{ width: 5, alignSelf: "stretch", background: verdictColor, flexShrink: 0 }} />
-            <div style={{ flex: 1, marginLeft: 16, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: verdictColor, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 }}>Verdict · {verdict.charAt(0) + verdict.slice(1).toLowerCase()}</div>
-              <div style={{ ...epilogue, fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", color: "#1C1C1A", lineHeight: 1, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 }}>{VERDICT_TITLE[verdict]}</div>
-              <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880", textAlign: "left", width: "100%", margin: 0, padding: 0 }}>{VERDICT_SUB[verdict]}</div>
+            <div style={{ flex: 1, marginLeft: 16, paddingLeft: 0, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: verdictColor, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 } as React.CSSProperties}>Verdict · {verdict.charAt(0) + verdict.slice(1).toLowerCase()}</div>
+              <div style={{ ...epilogue, fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", color: "#1C1C1A", lineHeight: 1, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 } as React.CSSProperties}>{VERDICT_TITLE[verdict]}</div>
+              <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880", textAlign: "left", width: "100%", margin: 0, padding: 0 } as React.CSSProperties}>{VERDICT_SUB[verdict]}</div>
             </div>
             {/* Fix 2: confidence + label + QR stacked with clear separation, no overlap */}
             <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", marginLeft: "auto", gap: 8 }}>
