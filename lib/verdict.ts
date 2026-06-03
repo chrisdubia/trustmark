@@ -53,17 +53,25 @@ export function deriveVerdict(
   const hiveConfident = ai?.provider === "hive" && notAiScore >= 0.85;
 
   if (hiveConfident) {
+    // Editing software tag = confirmed modification
     if (hasEditingSoftware) {
-      // Strong "not AI" but editing software found → MODIFIED
-      return { verdict: "MODIFIED", confidence: 72 };
+      return { verdict: "MODIFIED", confidence: 75 };
     }
+    // Camera + timestamp + Hive says real → VERIFIED
     if (exif?.make && exif?.dateTimeOriginal) {
-      // Camera + timestamp + Hive not-AI → high confidence VERIFIED
       return { verdict: "VERIFIED", confidence: Math.min(90, Math.round(notAiScore * 88)) };
     }
-    // Hive says real but no camera metadata (stripped/web download) → MODIFIED
-    // The content is real but provenance chain is broken
-    return { verdict: "MODIFIED", confidence: Math.round(notAiScore * 68) };
+    // Camera make but no timestamp (or vice versa) — still lean VERIFIED
+    if (exif?.make || exif?.dateTimeOriginal) {
+      return { verdict: "VERIFIED", confidence: 72 };
+    }
+    // No camera metadata at all — content is real but origin unverifiable
+    return { verdict: "UNKNOWN", confidence: 45 };
+  }
+
+  // Editing software without Hive confirmation
+  if (hasEditingSoftware) {
+    return { verdict: "MODIFIED", confidence: 70 };
   }
 
   // Real camera + timestamp = likely real, just no C2PA
