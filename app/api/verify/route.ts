@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { fileName, fileType, fileSize, dataUrl } = body;
+  const { fileName, fileType, fileSize, dataUrl, clientExif } = body;
 
   if (!dataUrl || !fileName || !fileType) {
     return NextResponse.json(
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     const [c2pa, exif] = await Promise.all([
       verifyC2PA(dataUrl),
-      extractExif(dataUrl),
+      extractExif(dataUrl, clientExif),
     ]);
 
     const [aiDetection] = await Promise.all([

@@ -90,4 +90,6 @@ export interface VerifyRequest {
   fileType: string;
   fileSize: number;
   dataUrl: string;
+  // Pre-extracted EXIF from original file (before client-side canvas compression strips it)
+  clientExif?: Record<string, unknown> | null;
 }

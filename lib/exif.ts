@@ -17,24 +17,34 @@ function formatShutterSpeed(seconds: number | null): string | null {
   return `1/${denom}s`;
 }
 
-export async function extractExif(dataUrl: string): Promise<ExifData | null> {
+export async function extractExif(
+  dataUrl: string,
+  clientExif?: Record<string, unknown> | null
+): Promise<ExifData | null> {
   try {
     const exifr = (await import("exifr")).default;
-    const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
-    const buf = Buffer.from(base64, "base64");
 
-    const raw = await exifr.parse(buf, {
-      tiff: true,
-      xmp: true,
-      icc: false,
-      iptc: true,
-      jfif: false,
-      ihdr: false,
-      translateKeys: true,
-      translateValues: true,
-      reviveValues: true,
-      gps: true,
-    });
+    // Prefer client-extracted EXIF (from original file before canvas compression strips metadata).
+    // Fall back to parsing the (possibly compressed) dataUrl on the server.
+    let raw: Record<string, unknown> | null | undefined;
+    if (clientExif && Object.keys(clientExif).length > 0) {
+      raw = clientExif;
+    } else {
+      const base64 = dataUrl.includes(",") ? dataUrl.split(",")[1] : dataUrl;
+      const buf = Buffer.from(base64, "base64");
+      raw = await exifr.parse(buf, {
+        tiff: true,
+        xmp: true,
+        icc: false,
+        iptc: true,
+        jfif: false,
+        ihdr: false,
+        translateKeys: true,
+        translateValues: true,
+        reviveValues: true,
+        gps: true,
+      });
+    }
 
     if (!raw) {
       return {
@@ -48,9 +58,8 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
       };
     }
 
-    const lat: number | null = raw.latitude ?? raw.GPSLatitude ?? null;
-    const lon: number | null = raw.longitude ?? raw.GPSLongitude ?? null;
-    const alt: number | null = raw.GPSAltitude ?? null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const r = raw as any;
 
     const toIso = (v: unknown): string | null => {
       if (!v) return null;
@@ -65,22 +74,29 @@ export async function extractExif(dataUrl: string): Promise<ExifData | null> {
       return isNaN(n) ? null : n;
     };
 
+    const toStr = (v: unknown): string | null =>
+      v != null && typeof v === "string" ? v : null;
+
+    const lat: number | null = toFloat(r.latitude ?? r.GPSLatitude);
+    const lon: number | null = toFloat(r.longitude ?? r.GPSLongitude);
+    const alt: number | null = toFloat(r.GPSAltitude);
+
     return {
-      make: raw.Make ?? null,
-      model: raw.Model ?? null,
-      software: formatSoftware(raw.Software ?? null),
-      dateTimeOriginal: toIso(raw.DateTimeOriginal ?? raw.DateTimeDigitized),
-      dateTimeModified: toIso(raw.ModifyDate ?? raw.DateTime),
+      make: toStr(r.Make),
+      model: toStr(r.Model),
+      software: formatSoftware(toStr(r.Software)),
+      dateTimeOriginal: toIso(r.DateTimeOriginal ?? r.DateTimeDigitized),
+      dateTimeModified: toIso(r.ModifyDate ?? r.DateTime),
       gps: lat !== null && lon !== null ? { lat, lon } : null,
-      altitude: alt !== null ? Math.round(toFloat(alt) ?? 0) : null,
-      width: raw.PixelXDimension ?? raw.ExifImageWidth ?? raw.ImageWidth ?? null,
-      height: raw.PixelYDimension ?? raw.ExifImageHeight ?? raw.ImageHeight ?? null,
-      lensModel: raw.LensModel ?? null,
-      focalLength: toFloat(raw.FocalLength),
-      aperture: toFloat(raw.FNumber ?? raw.ApertureValue),
-      shutterSpeed: formatShutterSpeed(toFloat(raw.ExposureTime)),
-      iso: raw.ISO ?? raw.ISOSpeedRatings ?? null,
-      hasStrippedMetadata: !raw.Make && !raw.Model && !raw.Software,
+      altitude: alt !== null ? Math.round(alt) : null,
+      width: toFloat(r.PixelXDimension ?? r.ExifImageWidth ?? r.ImageWidth),
+      height: toFloat(r.PixelYDimension ?? r.ExifImageHeight ?? r.ImageHeight),
+      lensModel: toStr(r.LensModel),
+      focalLength: toFloat(r.FocalLength),
+      aperture: toFloat(r.FNumber ?? r.ApertureValue),
+      shutterSpeed: formatShutterSpeed(toFloat(r.ExposureTime)),
+      iso: toFloat(r.ISO ?? r.ISOSpeedRatings),
+      hasStrippedMetadata: !r.Make && !r.Model && !r.Software,
     };
   } catch {
     return null;

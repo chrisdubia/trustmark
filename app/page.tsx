@@ -60,6 +60,18 @@ export default function Home() {
       return;
     }
 
+    // Extract EXIF from original file BEFORE canvas compression strips all metadata
+    let clientExif: Record<string, unknown> | null = null;
+    if (file.type.startsWith("image/")) {
+      try {
+        const exifr = (await import("exifr")).default;
+        clientExif = await exifr.parse(file, {
+          tiff: true, xmp: false, icc: false, iptc: false,
+          gps: true, translateKeys: true, translateValues: true, reviveValues: true,
+        }) ?? null;
+      } catch { /* ignore — server will attempt extraction from dataUrl */ }
+    }
+
     // Show preview for images only
     if (file.type.startsWith("image/")) {
       setPreviewUrl(dataUrl);
@@ -78,6 +90,7 @@ export default function Home() {
           fileType: file.type,
           fileSize: file.size,
           dataUrl,
+          clientExif,
         }),
       });
 
