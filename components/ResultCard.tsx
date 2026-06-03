@@ -184,24 +184,41 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
         {/* Device & capture */}
         {(exif?.make || exif?.model || exif?.dateTimeOriginal || exif?.gps) && (
           <Section title="Capture Info">
-            {exif.make && exif.model && (
-              <Row label="Device" value={`${exif.make} ${exif.model}`} />
+            {(exif.make || exif.model) && (
+              <Row label="Device" value={[exif.make, exif.model].filter(Boolean).join(" ")} />
+            )}
+            {exif.lensModel && (
+              <Row label="Lens" value={exif.lensModel} />
             )}
             {exif.dateTimeOriginal && (
               <Row label="Captured" value={formatDate(exif.dateTimeOriginal) ?? exif.dateTimeOriginal} />
             )}
             {exif.dateTimeModified && exif.dateTimeModified !== exif.dateTimeOriginal && (
-              <Row label="Modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
+              <Row label="Last modified" value={formatDate(exif.dateTimeModified) ?? exif.dateTimeModified} />
             )}
             {exif.width && exif.height && (
-              <Row label="Resolution" value={`${exif.width} × ${exif.height}`} />
+              <Row label="Resolution" value={`${exif.width} × ${exif.height} px`} />
+            )}
+            {(exif.aperture || exif.shutterSpeed || exif.iso || exif.focalLength) && (
+              <Row
+                label="Camera settings"
+                value={[
+                  exif.focalLength ? `${exif.focalLength}mm` : null,
+                  exif.aperture ? `f/${exif.aperture}` : null,
+                  exif.shutterSpeed ?? null,
+                  exif.iso ? `ISO ${exif.iso}` : null,
+                ].filter(Boolean).join("  ·  ")}
+              />
             )}
             {exif.gps && mapsUrl && (
               <Row
-                label="GPS Location"
+                label="GPS coordinates"
                 value={`${exif.gps.lat.toFixed(5)}, ${exif.gps.lon.toFixed(5)}`}
                 href={mapsUrl}
               />
+            )}
+            {exif.altitude !== null && (
+              <Row label="Altitude" value={`${exif.altitude} m`} />
             )}
             {exif.software && (
               <Row label="Software" value={exif.software} />

@@ -25,8 +25,14 @@ export interface ExifData {
   dateTimeOriginal: string | null;
   dateTimeModified: string | null;
   gps: { lat: number; lon: number } | null;
+  altitude: number | null;
   width: number | null;
   height: number | null;
+  lensModel: string | null;
+  focalLength: number | null;
+  aperture: number | null;
+  shutterSpeed: string | null;
+  iso: number | null;
   hasStrippedMetadata: boolean;
 }
 
