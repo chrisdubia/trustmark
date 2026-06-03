@@ -10,35 +10,41 @@ function extractClasses(d: any): Array<{ class: string; score: number }> {
   );
 }
 
+// Hive V3 Playground API — model name goes in the URL path, not query string.
+// The sf1/va1 model family for AI-generated image detection.
+const HIVE_V3_MODELS = [
+  "ai-generated-image-detection",
+  "ai_generated_image_detection",
+  "va1-ai-generated-image",
+];
+
 async function callHiveV3Json(base64: string, mimeType: string): Promise<AIDetectionResult | null> {
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
-  try {
-    // V3 JSON body format — Bearer auth, base64 image
-    const res = await fetch("https://api.thehive.ai/api/v3/task/sync", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        image: { binary: base64 },
-        model: "ai-generated-image-detection",
-      }),
-      signal: AbortSignal.timeout(12000),
-    });
+  for (const model of HIVE_V3_MODELS) {
+    try {
+      const res = await fetch(`https://api.thehive.ai/api/v3/task/sync/${model}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ image: { binary: base64 } }),
+        signal: AbortSignal.timeout(12000),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      const classes = extractClasses(data);
-      if (classes.length) return buildResult(classes, "hive");
-    } else {
-      const text = await res.text().catch(() => "");
-      console.error(`[hive v3 json] ${res.status}: ${text.slice(0, 200)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const classes = extractClasses(data);
+        if (classes.length) return buildResult(classes, "hive");
+      } else {
+        const text = await res.text().catch(() => "");
+        console.error(`[hive v3 json/${model}] ${res.status}: ${text.slice(0, 200)}`);
+      }
+    } catch (e) {
+      console.error(`[hive v3 json/${model}] error:`, e);
     }
-  } catch (e) {
-    console.error("[hive v3 json] error:", e);
   }
   return null;
 }
@@ -47,29 +53,31 @@ async function callHiveV3Form(base64: string, mimeType: string): Promise<AIDetec
   const apiKey = process.env.HIVE_API_KEY;
   if (!apiKey || apiKey === "placeholder") return null;
 
-  try {
-    const buf = Buffer.from(base64, "base64");
-    const blob = new Blob([buf], { type: mimeType });
-    const formData = new FormData();
-    formData.append("media", blob, "image");
+  for (const model of HIVE_V3_MODELS) {
+    try {
+      const buf = Buffer.from(base64, "base64");
+      const blob = new Blob([buf], { type: mimeType });
+      const formData = new FormData();
+      formData.append("media", blob, "image");
 
-    const res = await fetch("https://api.thehive.ai/api/v3/task/sync", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}` },
-      body: formData,
-      signal: AbortSignal.timeout(12000),
-    });
+      const res = await fetch(`https://api.thehive.ai/api/v3/task/sync/${model}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}` },
+        body: formData,
+        signal: AbortSignal.timeout(12000),
+      });
 
-    if (res.ok) {
-      const data = await res.json();
-      const classes = extractClasses(data);
-      if (classes.length) return buildResult(classes, "hive");
-    } else {
-      const text = await res.text().catch(() => "");
-      console.error(`[hive v3 form] ${res.status}: ${text.slice(0, 200)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const classes = extractClasses(data);
+        if (classes.length) return buildResult(classes, "hive");
+      } else {
+        const text = await res.text().catch(() => "");
+        console.error(`[hive v3 form/${model}] ${res.status}: ${text.slice(0, 200)}`);
+      }
+    } catch (e) {
+      console.error(`[hive v3 form/${model}] error:`, e);
     }
-  } catch (e) {
-    console.error("[hive v3 form] error:", e);
   }
   return null;
 }
