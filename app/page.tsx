@@ -160,7 +160,7 @@ export default function Home() {
               cursor: "default",
             }}>{label}</span>
           ))}
-          <a href="/api/health" style={{
+          <a href="/status" style={{
             fontFamily: "'DM Mono', monospace",
             fontSize: 10,
             textTransform: "uppercase",
