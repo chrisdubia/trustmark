@@ -154,16 +154,16 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           <div style={{ padding: "22px 28px", display: "flex", alignItems: "flex-start", gap: 20, background: "#fff", borderBottom: "1px solid #D8D5CE" }}>
             {/* Fix 1: bar and text share the same flex row with no extra offset */}
             <div style={{ width: 5, alignSelf: "stretch", background: verdictColor, flexShrink: 0 }} />
-            <div style={{ flex: 1, paddingTop: 2 }}>
-              <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: verdictColor, marginBottom: 6 }}>Verdict · {verdict.charAt(0) + verdict.slice(1).toLowerCase()}</div>
-              <div style={{ ...epilogue, fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", color: "#1C1C1A", lineHeight: 1, marginBottom: 6 }}>{VERDICT_TITLE[verdict]}</div>
-              <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880" }}>{VERDICT_SUB[verdict]}</div>
+            <div style={{ flex: 1, marginLeft: 16, display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <div style={{ ...mono, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: verdictColor, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 }}>Verdict · {verdict.charAt(0) + verdict.slice(1).toLowerCase()}</div>
+              <div style={{ ...epilogue, fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", color: "#1C1C1A", lineHeight: 1, textAlign: "left", width: "100%", margin: 0, padding: 0, marginBottom: 6 }}>{VERDICT_TITLE[verdict]}</div>
+              <div style={{ ...epilogue, fontSize: 12, fontWeight: 300, color: "#8A8880", textAlign: "left", width: "100%", margin: 0, padding: 0 }}>{VERDICT_SUB[verdict]}</div>
             </div>
             {/* Fix 2: confidence + label + QR stacked with clear separation, no overlap */}
             <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 0 }}>
-              <div style={{ textAlign: "right", marginBottom: 12 }}>
-                <div style={{ ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1, color: verdictColor }}>{confidence}%</div>
-                <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", marginTop: 4 }}>Confidence</div>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 0, marginBottom: 12 }}>
+                <div style={{ ...mono, fontSize: 40, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1, display: "block", marginBottom: 4, color: verdictColor }}>{confidence}%</div>
+                <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", display: "block", marginTop: 4, lineHeight: 1 }}>Confidence</div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
                 <div style={{ width: 72, height: 72, border: "1px solid #D8D5CE", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", padding: 4 }}>
