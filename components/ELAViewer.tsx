@@ -113,7 +113,7 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
             style={{
               fontFamily: "'DM Mono', monospace",
               fontSize: 10,
-              color: "#4A7A9B",
+              color: "#7A7870",
               background: "none",
               border: "none",
               cursor: "pointer",
@@ -174,9 +174,11 @@ export default function ELAViewer({ imageUrl }: ELAViewerProps) {
 
       {elaUrl && (
         <p style={{
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 11,
+          fontFamily: "'Epilogue', sans-serif",
+          fontWeight: 300,
+          fontSize: 13,
           color: "#5A5855",
+          lineHeight: 1.6,
           marginTop: 8,
         }}>
           {showEla

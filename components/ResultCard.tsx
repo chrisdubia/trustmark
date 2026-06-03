@@ -89,7 +89,7 @@ function DataRow({ label, value, href }: { label: string; value: string; href?: 
       {href ? (
         <a
           href={href} target="_blank" rel="noopener noreferrer"
-          style={{ ...monoStyle, fontSize: 11, color: "#4A7A9B", textAlign: "right" as const, wordBreak: "break-all" as const, textDecoration: "none" }}
+          style={{ ...monoStyle, fontSize: 11, color: "#7A7870", textAlign: "right" as const, wordBreak: "break-all" as const, textDecoration: "none" }}
         >
           {value} ↗
         </a>
@@ -385,7 +385,6 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 340px",
-          minHeight: 580,
         }}
         className="result-grid"
       >
@@ -537,7 +536,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                     <div style={{ ...epilogueStyle, fontWeight: 400, fontSize: 13, color: "#1C1C1A", marginBottom: 2 }}>
                       {signal.label}
                     </div>
-                    <div style={{ ...monoStyle, fontSize: 11, color: "#5A5855", letterSpacing: "0.04em" }}>
+                    <div style={{ ...epilogueStyle, fontWeight: 300, fontSize: 13, color: "#5A5855", lineHeight: 1.5 }}>
                       {signal.detail}
                     </div>
                   </div>

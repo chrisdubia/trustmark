@@ -182,7 +182,7 @@ export default function StatusPage() {
     d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#F2F0EB" }}>
+    <main style={{ display: "flex", flexDirection: "column", background: "#F2F0EB" }}>
       {navHeader("status")}
 
       {/* Body */}
@@ -191,8 +191,8 @@ export default function StatusPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        padding: "60px 40px",
+        justifyContent: "flex-start",
+        padding: "40px 40px 80px",
       }}>
 
         {/* Stoplight + overall status */}
@@ -334,7 +334,7 @@ export default function StatusPage() {
             style={{
               ...mono,
               fontSize: 10,
-              color: checking ? "#B0ADA6" : "#4A7A9B",
+              color: checking ? "#B0ADA6" : "#7A7870",
               letterSpacing: "0.06em",
               background: "none",
               border: "none",

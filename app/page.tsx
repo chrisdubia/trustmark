@@ -118,7 +118,7 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <main style={{ display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <header style={{
         background: "#F2F0EB",
@@ -177,7 +177,6 @@ export default function Home() {
             <div style={{
               display: "grid",
               gridTemplateColumns: "1fr 340px",
-              minHeight: 580,
               borderBottom: "1px solid #D8D5CE",
             }} className="landing-grid">
               {/* Left column */}

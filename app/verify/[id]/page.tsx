@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 interface Props {
   params: { id: string };
@@ -11,44 +12,64 @@ export function generateMetadata({ params }: Props): Metadata {
   };
 }
 
-// Permalink pages are stateless — verification results are not stored server-side.
-// This page explains that and lets the user verify a new file.
+const mono = { fontFamily: "'DM Mono', monospace" } as const;
+const epilogue = { fontFamily: "'Epilogue', sans-serif" } as const;
+
 export default function VerifyPage({ params }: Props) {
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center px-4">
-      <div className="max-w-md w-full text-center space-y-6">
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center mx-auto">
-          <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-          </svg>
+    <main style={{ display: "flex", flexDirection: "column", background: "#F2F0EB", color: "#1C1C1A", ...epilogue }}>
+      <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "1px solid #D8D5CE" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+          <div style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #1C1C1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#1C1C1A" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <span style={{ ...epilogue, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#1C1C1A" }}>Trustmark</span>
+        </Link>
+        <div style={{ display: "flex", gap: 28 }}>
+          {([["How it works", "/how-it-works"], ["API", "/api"], ["Status", "/status"]] as [string, string][]).map(([label, href]) => (
+            <Link key={label} href={href} style={{ ...mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase", color: "#A8A59E", textDecoration: "none" }}>{label}</Link>
+          ))}
+        </div>
+      </nav>
+
+      <div style={{ maxWidth: 560, margin: "0 auto", padding: "64px 40px 80px", width: "100%" }}>
+        <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "#A8A59E", marginBottom: 20 }}>Verification result</div>
+        <h1 style={{ ...epilogue, fontWeight: 300, fontSize: 36, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#1C1C1A", marginBottom: 16 }}>
+          Results are not stored.
+        </h1>
+        <p style={{ ...epilogue, fontWeight: 300, fontSize: 15, lineHeight: 1.75, color: "#5A5855", marginBottom: 40 }}>
+          TrustMark is stateless by design. Files and results are never stored on our servers. Shared links represent a verification event, not persisted data.
+        </p>
+
+        <div style={{ background: "#F8F6F1", border: "1px solid #D8D5CE", borderRadius: 2, padding: 24, marginBottom: 32 }}>
+          <div style={{ ...mono, fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", marginBottom: 10 }}>Verification ID</div>
+          <div style={{ ...mono, fontSize: 11, color: "#7A7870", letterSpacing: "0.06em", wordBreak: "break-all" }}>{params.id}</div>
         </div>
 
-        <div>
-          <h1 className="text-2xl font-bold text-white">TrustMark Verification</h1>
-          <p className="text-white/40 text-sm mt-2">
-            Verification ID: <code className="text-white/60">{params.id}</code>
-          </p>
-        </div>
+        <p style={{ ...epilogue, fontWeight: 300, fontSize: 14, lineHeight: 1.75, color: "#7A7870", marginBottom: 32 }}>
+          To verify the same file, the original sender needs to re-upload it. This protects privacy while enabling shared verdicts.
+        </p>
 
-        <div className="glass rounded-2xl p-5 text-left space-y-3">
-          <p className="text-sm text-white/60">
-            TrustMark is <strong className="text-white">stateless by design</strong> —
-            files and results are never stored on our servers. Shared links
-            represent a verification event, not stored data.
-          </p>
-          <p className="text-sm text-white/40">
-            To verify the same file, the original sender needs to re-upload it.
-            This protects privacy while enabling shared verdicts.
-          </p>
-        </div>
-
-        <a
-          href="/"
-          className="inline-block w-full py-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors"
-        >
-          Verify a file now →
-        </a>
+        <Link href="/" style={{
+          display: "block",
+          background: "#1C1C1A",
+          color: "#F2F0EB",
+          border: "1px solid #1C1C1A",
+          borderRadius: 2,
+          padding: "12px 24px",
+          ...mono,
+          fontSize: 10,
+          letterSpacing: "0.12em",
+          textTransform: "uppercase",
+          textDecoration: "none",
+          textAlign: "center",
+        }}>Verify a file now</Link>
       </div>
+
+      <footer style={{ borderTop: "1px solid #D8D5CE", padding: "14px 40px", display: "flex", justifyContent: "space-between" }}>
+        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Trustmark · 2026 · Stateless · No images stored</span>
+        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Five signals · One verdict</span>
+      </footer>
     </main>
   );
 }
