@@ -43,6 +43,31 @@ function compressImage(dataUrl: string, maxDimension = 2048, quality = 0.88): Pr
   });
 }
 
+function PrivacyExpander() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderTop: "1px solid #E0DDD6", paddingTop: 14, marginTop: 10 }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        style={{ display: "flex", alignItems: "center", gap: 8, background: "none", border: "none", cursor: "pointer", padding: 0, fontFamily: "'DM Mono', monospace", fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase", color: "#7A7870" }}
+      >
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="#7A7870" strokeWidth="1.5" style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.15s" }}>
+          <path d="M2 3.5l3 3 3-3"/>
+        </svg>
+        What happens to my file?
+      </button>
+      {open && (
+        <div style={{ fontFamily: "'Epilogue', sans-serif", fontWeight: 300, fontSize: 13, lineHeight: 1.75, color: "#7A7870", marginTop: 12, maxWidth: 440 }}>
+          When you upload a file, it is processed entirely in memory to run our verification checks.{" "}
+          <span style={{ fontWeight: 400, color: "#1C1C1A" }}>The file itself is never written to disk and never saved.</span>{" "}
+          The moment your result is generated, the file is discarded. We retain only a SHA-256 fingerprint — a one-way mathematical signature that cannot be reversed to reconstruct your image — along with the filename and verdict.{" "}
+          AI detection is performed via the Hive AI API; your image is transmitted to Hive for analysis and subject to their data policy. No account is required, and we cannot recover or share the file content you verify.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const { user } = useUser();
   const [state, setState] = useState<AppState>("idle");
@@ -250,11 +275,22 @@ export default function Home() {
                   <DropZone onFile={handleFile} />
                 </div>
 
+                {/* Privacy micro-note */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, fontFamily: "'DM Mono', monospace", fontSize: 10, color: "#6B8F4E", letterSpacing: "0.04em", marginTop: 10, marginBottom: 4 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6B8F4E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                  Your file is analyzed in memory and never stored on our servers
+                </div>
+
+                {/* Expandable privacy detail */}
+                <PrivacyExpander />
+
                 <div style={{
                   display: "flex",
                   flexDirection: "row",
                   gap: 24,
-                  marginTop: 24,
+                  marginTop: 16,
                 }}>
                   {["Never stored", "Privacy first"].map((tag, i) => (
                     <span key={tag} style={{ display: "flex", alignItems: "center", gap: 8 }}>
