@@ -67,23 +67,23 @@ export async function getUser(clerkUserId: string): Promise<DbUser | null> {
   if (!dbConfigured()) return null;
   await ensureSchema();
   const sql = getSQL();
-  const rows = await sql<DbUser[]>`
+  const rows = await sql`
     SELECT * FROM tm_users WHERE clerk_user_id = ${clerkUserId} LIMIT 1
   `;
-  return rows[0] ?? null;
+  return (rows[0] as DbUser) ?? null;
 }
 
 export async function upsertUser(clerkUserId: string, email: string): Promise<DbUser> {
   await ensureSchema();
   const sql = getSQL();
-  const rows = await sql<DbUser[]>`
+  const rows = await sql`
     INSERT INTO tm_users (clerk_user_id, email)
     VALUES (${clerkUserId}, ${email})
     ON CONFLICT (clerk_user_id) DO UPDATE
       SET email = EXCLUDED.email, updated_at = NOW()
     RETURNING *
   `;
-  return rows[0];
+  return rows[0] as DbUser;
 }
 
 export async function incrementVerifications(clerkUserId: string): Promise<void> {
@@ -99,7 +99,7 @@ export async function incrementVerifications(clerkUserId: string): Promise<void>
 export async function deductCredit(clerkUserId: string): Promise<{ ok: boolean; remaining: number }> {
   await ensureSchema();
   const sql = getSQL();
-  const rows = await sql<{ credits: number }[]>`
+  const rows = await sql`
     UPDATE tm_users
     SET credits = GREATEST(credits - 1, 0), updated_at = NOW()
     WHERE clerk_user_id = ${clerkUserId} AND credits > 0
@@ -109,7 +109,7 @@ export async function deductCredit(clerkUserId: string): Promise<{ ok: boolean; 
     const user = await getUser(clerkUserId);
     return { ok: false, remaining: user?.credits ?? 0 };
   }
-  return { ok: true, remaining: rows[0].credits };
+  return { ok: true, remaining: (rows[0] as { credits: number }).credits };
 }
 
 export async function addCredits(clerkUserId: string, amount: number): Promise<void> {
@@ -157,13 +157,13 @@ export async function getVerificationHistory(
 ): Promise<DbVerification[]> {
   await ensureSchema();
   const sql = getSQL();
-  const rows = await sql<DbVerification[]>`
+  const rows = await sql`
     SELECT * FROM tm_verifications
     WHERE clerk_user_id = ${clerkUserId}
     ORDER BY verified_at DESC
     LIMIT ${limit}
   `;
-  return rows;
+  return rows as DbVerification[];
 }
 
 export const PLAN_LIMITS: Record<Plan, { verifications: number; certificates: number; history: number }> = {
