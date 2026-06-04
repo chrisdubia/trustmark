@@ -42,11 +42,12 @@ export async function checkAndRecordHash(
   }
 
   try {
-    const { kv } = await import("@vercel/kv");
+    const { Redis } = await import("@upstash/redis");
+    const redis = new Redis({ url: kvUrl, token: kvToken });
     const key = `hash:${hash}`;
     const now = new Date().toISOString();
 
-    const existing = await kv.get<KVRecord>(key);
+    const existing = await redis.get<KVRecord>(key);
 
     let previouslySeenCount = 0;
     let firstSeenAt: string | null = null;
@@ -63,7 +64,7 @@ export async function checkAndRecordHash(
       }
 
       // Update record
-      await kv.set<KVRecord>(key, {
+      await redis.set(key, {
         ...existing,
         lastSeenAt: now,
         seenCount: existing.seenCount + 1,
@@ -71,7 +72,7 @@ export async function checkAndRecordHash(
       });
     } else {
       // First time seeing this file
-      await kv.set<KVRecord>(key, {
+      await redis.set(key, {
         verdict,
         confidence,
         firstSeenAt: now,
