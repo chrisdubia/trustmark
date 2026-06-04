@@ -355,13 +355,16 @@ export default function StatusPage() {
         padding: "14px 40px",
         display: "flex",
         justifyContent: "space-between",
+        alignItems: "center",
       }}>
         <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Trustmarc · 2026 · Stateless · No images stored
         </span>
-        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-          Auto-refreshes every 30 seconds
-        </span>
+        <div style={{ display: "flex", gap: 16 }}>
+          {([["Privacy", "/privacy"], ["Terms", "/terms"], ["Cookies", "/cookies"]] as [string, string][]).map(([label, href]) => (
+            <a key={label} href={href} style={{ ...mono, fontSize: 9, color: "#C0BDB6", textDecoration: "none" }}>{label}</a>
+          ))}
+        </div>
       </footer>
     </main>
   );

@@ -92,9 +92,13 @@ export default function ApiPage() {
         </div>
       </div>
 
-      <footer style={{ borderTop: "1px solid #D8D5CE", padding: "14px 40px", display: "flex", justifyContent: "space-between" }}>
+      <footer style={{ borderTop: "1px solid #D8D5CE", padding: "14px 40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Trustmarc · 2026 · API · Private beta</span>
-        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>One call · One verdict</span>
+        <div style={{ display: "flex", gap: 16 }}>
+          {([["Privacy", "/privacy"], ["Terms", "/terms"], ["Cookies", "/cookies"]] as [string, string][]).map(([label, href]) => (
+            <Link key={label} href={href} style={{ ...mono, fontSize: 9, color: "#C0BDB6", textDecoration: "none" }}>{label}</Link>
+          ))}
+        </div>
       </footer>
     </main>
   );

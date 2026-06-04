@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import DropZone from "@/components/DropZone";
 import ResultCard from "@/components/ResultCard";
 import ProgressBar from "@/components/ProgressBar";
@@ -525,9 +526,11 @@ export default function Home() {
         <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#C0BDB6" }}>
           Trustmarc · Stateless · Privacy-first
         </span>
-        <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#C0BDB6" }}>
-          No images stored · Ever
-        </span>
+        <div style={{ display: "flex", gap: 16 }}>
+          {([["Privacy", "/privacy"], ["Terms", "/terms"], ["Cookies", "/cookies"]] as [string, string][]).map(([label, href]) => (
+            <Link key={label} href={href} style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#C0BDB6", textDecoration: "none" }}>{label}</Link>
+          ))}
+        </div>
       </footer>
 
       <style>{`
