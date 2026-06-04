@@ -12,19 +12,9 @@ export default function NavAuth() {
 
   if (!isLoaded) return null;
 
+  // TODO: re-enable sign-in when Clerk production keys are configured and monetization is ready
   if (!isSignedIn) {
-    return (
-      <Link href="/sign-in" style={{
-        ...mono,
-        fontSize: 10,
-        textTransform: "uppercase",
-        letterSpacing: "0.1em",
-        color: "#A8A59E",
-        textDecoration: "none",
-      }}>
-        Sign in
-      </Link>
-    );
+    return null;
   }
 
   const email = user.primaryEmailAddress?.emailAddress ?? "";
