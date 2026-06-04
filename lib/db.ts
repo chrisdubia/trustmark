@@ -1,4 +1,4 @@
-import { sql } from "@vercel/postgres";
+import { neon } from "@neondatabase/serverless";
 
 export type Plan = "free" | "pro" | "education" | "teams";
 
@@ -24,13 +24,20 @@ export interface DbVerification {
 }
 
 const dbConfigured = () =>
-  !!(process.env.POSTGRES_URL && process.env.POSTGRES_URL !== "placeholder");
+  !!(process.env.DATABASE_URL && process.env.DATABASE_URL !== "placeholder");
+
+function getSQL() {
+  const url = process.env.DATABASE_URL;
+  if (!url || url === "placeholder") throw new Error("DATABASE_URL not configured");
+  return neon(url);
+}
 
 // Idempotent schema init — call once per cold start
 let initialized = false;
 export async function ensureSchema(): Promise<void> {
   if (!dbConfigured() || initialized) return;
   initialized = true;
+  const sql = getSQL();
   await sql`
     CREATE TABLE IF NOT EXISTS tm_users (
       clerk_user_id TEXT PRIMARY KEY,
@@ -40,7 +47,7 @@ export async function ensureSchema(): Promise<void> {
       verifications_used INTEGER NOT NULL DEFAULT 0,
       created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
+    )
   `;
   await sql`
     CREATE TABLE IF NOT EXISTS tm_verifications (
@@ -52,14 +59,15 @@ export async function ensureSchema(): Promise<void> {
       sha256        TEXT NOT NULL,
       cert_id       TEXT NOT NULL,
       verified_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
+    )
   `;
 }
 
 export async function getUser(clerkUserId: string): Promise<DbUser | null> {
   if (!dbConfigured()) return null;
   await ensureSchema();
-  const { rows } = await sql<DbUser>`
+  const sql = getSQL();
+  const rows = await sql<DbUser[]>`
     SELECT * FROM tm_users WHERE clerk_user_id = ${clerkUserId} LIMIT 1
   `;
   return rows[0] ?? null;
@@ -67,7 +75,8 @@ export async function getUser(clerkUserId: string): Promise<DbUser | null> {
 
 export async function upsertUser(clerkUserId: string, email: string): Promise<DbUser> {
   await ensureSchema();
-  const { rows } = await sql<DbUser>`
+  const sql = getSQL();
+  const rows = await sql<DbUser[]>`
     INSERT INTO tm_users (clerk_user_id, email)
     VALUES (${clerkUserId}, ${email})
     ON CONFLICT (clerk_user_id) DO UPDATE
@@ -79,6 +88,7 @@ export async function upsertUser(clerkUserId: string, email: string): Promise<Db
 
 export async function incrementVerifications(clerkUserId: string): Promise<void> {
   await ensureSchema();
+  const sql = getSQL();
   await sql`
     UPDATE tm_users
     SET verifications_used = verifications_used + 1, updated_at = NOW()
@@ -88,7 +98,8 @@ export async function incrementVerifications(clerkUserId: string): Promise<void>
 
 export async function deductCredit(clerkUserId: string): Promise<{ ok: boolean; remaining: number }> {
   await ensureSchema();
-  const { rows } = await sql<{ credits: number }>`
+  const sql = getSQL();
+  const rows = await sql<{ credits: number }[]>`
     UPDATE tm_users
     SET credits = GREATEST(credits - 1, 0), updated_at = NOW()
     WHERE clerk_user_id = ${clerkUserId} AND credits > 0
@@ -103,6 +114,7 @@ export async function deductCredit(clerkUserId: string): Promise<{ ok: boolean; 
 
 export async function addCredits(clerkUserId: string, amount: number): Promise<void> {
   await ensureSchema();
+  const sql = getSQL();
   await sql`
     UPDATE tm_users
     SET credits = credits + ${amount}, updated_at = NOW()
@@ -112,6 +124,7 @@ export async function addCredits(clerkUserId: string, amount: number): Promise<v
 
 export async function setPlan(clerkUserId: string, plan: Plan): Promise<void> {
   await ensureSchema();
+  const sql = getSQL();
   await sql`
     UPDATE tm_users
     SET plan = ${plan}, updated_at = NOW()
@@ -129,6 +142,7 @@ export async function logVerification(
   certId: string
 ): Promise<void> {
   await ensureSchema();
+  const sql = getSQL();
   await sql`
     INSERT INTO tm_verifications (id, clerk_user_id, filename, verdict, confidence, sha256, cert_id, verified_at)
     VALUES (${id}, ${clerkUserId}, ${filename}, ${verdict}, ${confidence}, ${sha256}, ${certId}, NOW())
@@ -142,7 +156,8 @@ export async function getVerificationHistory(
   limit = 500
 ): Promise<DbVerification[]> {
   await ensureSchema();
-  const { rows } = await sql<DbVerification>`
+  const sql = getSQL();
+  const rows = await sql<DbVerification[]>`
     SELECT * FROM tm_verifications
     WHERE clerk_user_id = ${clerkUserId}
     ORDER BY verified_at DESC
