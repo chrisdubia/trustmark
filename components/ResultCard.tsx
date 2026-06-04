@@ -590,7 +590,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, background: "#F4F7F0", border: "1px solid #D5E3C8", borderRadius: 3, padding: "14px 16px", marginTop: 16 }}>
               <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 12, color: "#6B8F4E", flexShrink: 0, marginTop: 1 }}>+</span>
               <div style={{ fontFamily: "'Epilogue', sans-serif", fontWeight: 300, fontSize: 12, lineHeight: 1.6, color: "#5A5855" }}>
-                <span style={{ fontWeight: 400, color: "#1C1C1A" }}>This file has already been discarded.</span> It was processed in memory and never stored. Only the fingerprint and verdict above are retained.
+                <span style={{ fontWeight: 400, color: "#1C1C1A" }}>The file you uploaded has been discarded.</span> It was processed in memory and never stored as a file. We retain only the fingerprint, filename, and verdict shown above. AI detection was performed via our partner Hive AI.
               </div>
             </div>
           </div>

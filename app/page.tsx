@@ -58,10 +58,9 @@ function PrivacyExpander() {
       </button>
       {open && (
         <div style={{ fontFamily: "'Epilogue', sans-serif", fontWeight: 300, fontSize: 13, lineHeight: 1.75, color: "#7A7870", marginTop: 12, maxWidth: 440 }}>
-          When you upload a file, it is processed entirely in memory to run our verification checks.{" "}
+          When you upload a file, it is processed in memory to run our verification checks.{" "}
           <span style={{ fontWeight: 400, color: "#1C1C1A" }}>The file itself is never written to disk and never saved.</span>{" "}
-          The moment your result is generated, the file is discarded. We retain only a SHA-256 fingerprint — a one-way mathematical signature that cannot be reversed to reconstruct your image — along with the filename and verdict.{" "}
-          AI detection is performed via the Hive AI API; your image is transmitted to Hive for analysis and subject to their data policy. No account is required, and we cannot recover or share the file content you verify.
+          To detect AI generation, a resized copy of the image is sent to our detection partner, Hive AI, whose own privacy policy governs that processing. The moment your result is generated, the file is discarded on our end. We retain only a SHA-256 fingerprint — a one-way signature that cannot reconstruct your image — along with the filename and verdict. No account is required to verify a file.
         </div>
       )}
     </div>
@@ -285,6 +284,7 @@ export default function Home() {
 
                 {/* Expandable privacy detail */}
                 <PrivacyExpander />
+
 
                 <div style={{
                   display: "flex",
