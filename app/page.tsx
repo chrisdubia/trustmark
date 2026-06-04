@@ -123,6 +123,30 @@ export default function Home() {
 
   return (
     <main style={{ display: "flex", flexDirection: "column" }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "name": "Trustmarc",
+          "applicationCategory": "SecurityApplication",
+          "operatingSystem": "Any",
+          "description": "Verify whether any image, video, or document is authentic, edited, or AI-generated.",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "url": "https://trustmarc.io"
+        })}}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "name": "Trustmarc",
+          "url": "https://trustmarc.io",
+          "logo": "https://trustmarc.io/og-image.png",
+          "contactPoint": { "@type": "ContactPoint", "email": "hello@trustmarc.io", "contactType": "customer support" }
+        })}}
+      />
       {/* Header */}
       <header style={{
         background: "#F2F0EB",

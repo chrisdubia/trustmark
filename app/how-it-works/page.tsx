@@ -1,5 +1,11 @@
 import Link from "next/link";
 import NavAuth from "@/components/NavAuth";
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'How It Works — Five-Signal Verification',
+  description: 'See how Trustmarc verifies media authenticity using C2PA provenance, EXIF metadata, AI generation detection, error level analysis, and cryptographic fingerprinting.',
+};
 
 const mono = { fontFamily: "'DM Mono', monospace" } as const;
 const epilogue = { fontFamily: "'Epilogue', sans-serif" } as const;
@@ -7,6 +13,35 @@ const epilogue = { fontFamily: "'Epilogue', sans-serif" } as const;
 export default function HowItWorksPage() {
   return (
     <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "#F2F0EB", color: "#1C1C1A", ...epilogue }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How do I check if an image is AI-generated?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Upload the image to Trustmarc. Our system runs five forensic signals including AI detection, C2PA provenance check, EXIF metadata analysis, error level analysis, and cryptographic fingerprinting to return a verdict within seconds." }
+            },
+            {
+              "@type": "Question",
+              "name": "What is C2PA?",
+              "acceptedAnswer": { "@type": "Answer", "text": "C2PA (Coalition for Content Provenance and Authenticity) is an open standard that cryptographically signs media at the moment of capture. Trustmarc reads these signatures to verify if an image came from a certified camera or content tool." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is my uploaded file stored or shared?",
+              "acceptedAnswer": { "@type": "Answer", "text": "No. Trustmarc processes your file in memory and discards it immediately after generating the verification result. We store only a cryptographic hash for the known-fakes database — never the file itself." }
+            },
+            {
+              "@type": "Question",
+              "name": "Is Trustmarc free to use?",
+              "acceptedAnswer": { "@type": "Answer", "text": "Yes. The free tier includes 5 verifications per month with no account required. Pro plans with unlimited verifications start at $49/month." }
+            }
+          ]
+        })}}
+      />
       <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 40px", borderBottom: "1px solid #D8D5CE" }}>
         <Link href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <div style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #1C1C1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
