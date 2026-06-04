@@ -5,7 +5,7 @@ import type Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-const PRODUCT_TO_PLAN: Record<string, { plan?: "pro" | "education"; credits?: number }> = {
+const PRODUCT_TO_PLAN: Record<string, { plan?: "pro" | "education" | "teams"; credits?: number }> = {
   PRO_MONTHLY:        { plan: "pro" },
   PRO_ANNUAL:         { plan: "pro" },
   TEAMS_MONTHLY:      { plan: "teams" },
