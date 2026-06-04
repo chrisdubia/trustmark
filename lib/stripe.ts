@@ -24,6 +24,13 @@ export const STRIPE_PRODUCTS = {
     interval: "month" as const,
     mode: "subscription" as const,
   },
+  TEAMS_MONTHLY: {
+    name: "Trustmarc Teams — Monthly",
+    amount: 14900,
+    currency: "usd",
+    interval: "month" as const,
+    mode: "subscription" as const,
+  },
   CREDIT_PACK: {
     name: "Trustmarc — 10 Verification Credits",
     amount: 1500,
