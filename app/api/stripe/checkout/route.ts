@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
 
   const userId = await getCurrentUserId();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://trustmark.io";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://trustmarc.io";
 
   // Ensure user row exists if signed in
   if (userId && email) {

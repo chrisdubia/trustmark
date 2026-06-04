@@ -198,7 +198,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
     .join("\n") ?? "";
 
   const emailBody = [
-    `TrustMark Verification Result`,
+    `Trustmarc Verification Result`,
     ``,
     `Verdict: ${result.verdict}`,
     `Confidence: ${confidence}%`,
@@ -211,7 +211,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
 
   const copyAsText = () => {
     const lines = [
-      `TRUSTMARK VERIFICATION REPORT`,
+      `TRUSTMARC VERIFICATION REPORT`,
       `================================`,
       `Verdict: ${result.verdict}`,
       `Confidence: ${confidence}%`,
@@ -257,7 +257,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
     }
   };
 
-  const tweetText = `I verified this image using @TrustMark. Verdict: ${result.verdict} (${confidence}% confidence). ${shareUrl}`;
+  const tweetText = `I verified this image using @Trustmarc. Verdict: ${result.verdict} (${confidence}% confidence). ${shareUrl}`;
 
   const aiScore = Math.round((aiDetection?.score ?? 0) * 100);
   const aiColor = aiScore > 60 ? "#B85050" : aiScore > 20 ? "#C4882A" : "#6B8F4E";
@@ -595,7 +595,7 @@ export default function ResultCard({ result, previewUrl, onReset }: ResultCardPr
                 {copied ? "Copied!" : "Copy link"}
               </button>
               <a
-                href={`mailto:?subject=${encodeURIComponent("TrustMark Verification Result")}&body=${encodeURIComponent(emailBody)}`}
+                href={`mailto:?subject=${encodeURIComponent("Trustmarc Verification Result")}&body=${encodeURIComponent(emailBody)}`}
                 style={btnOutline}
               >
                 Email

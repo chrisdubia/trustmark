@@ -12,7 +12,7 @@ export default function HowItWorksPage() {
           <div style={{ width: 18, height: 18, borderRadius: "50%", border: "1px solid #1C1C1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#1C1C1A" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </div>
-          <span style={{ ...epilogue, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#1C1C1A" }}>Trustmark</span>
+          <span style={{ ...epilogue, fontWeight: 500, fontSize: 12, letterSpacing: "0.2em", textTransform: "uppercase", color: "#1C1C1A" }}>TRUSTMARC</span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
           {([["How it works", "/how-it-works", true], ["API", "/api", false], ["Status", "/status", false]] as [string, string, boolean][]).map(([label, href, active]) => (
@@ -26,7 +26,7 @@ export default function HowItWorksPage() {
         <div style={{ ...mono, fontSize: 10, letterSpacing: "0.16em", textTransform: "uppercase", color: "#A8A59E", marginBottom: 20 }}>How it works</div>
         <h1 style={{ ...epilogue, fontWeight: 300, fontSize: 36, letterSpacing: "-0.02em", lineHeight: 1.1, color: "#1C1C1A", marginBottom: 16 }}>Five signals.<br />One verdict.</h1>
         <p style={{ ...epilogue, fontWeight: 300, fontSize: 15, lineHeight: 1.75, color: "#5A5855", marginBottom: 56, maxWidth: 520 }}>
-          TrustMark runs every file through five independent checks and combines them into a single trust verdict. Here is exactly what happens when you drop a file.
+          Trustmarc runs every file through five independent checks and combines them into a single trust verdict. Here is exactly what happens when you drop a file.
         </p>
 
         {[
@@ -91,13 +91,13 @@ export default function HowItWorksPage() {
         <div style={{ marginTop: 48, padding: 24, background: "#ECEAE4", border: "1px solid #D8D5CE", borderRadius: 2 }}>
           <div style={{ ...mono, fontSize: 9, letterSpacing: "0.16em", textTransform: "uppercase", color: "#A8A59E", marginBottom: 10 }}>A note on privacy</div>
           <div style={{ ...epilogue, fontWeight: 300, fontSize: 13, lineHeight: 1.75, color: "#7A7870" }}>
-            TrustMark never stores your files. Verification is stateless — your file is processed in memory and immediately discarded. We retain only the SHA-256 fingerprint and the verdict, never the file itself. No account is required.
+            Trustmarc never stores your files. Verification is stateless — your file is processed in memory and immediately discarded. We retain only the SHA-256 fingerprint and the verdict, never the file itself. No account is required.
           </div>
         </div>
       </div>
 
       <footer style={{ borderTop: "1px solid #D8D5CE", padding: "14px 40px", display: "flex", justifyContent: "space-between" }}>
-        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Trustmark · 2026 · Stateless · No images stored</span>
+        <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Trustmarc · 2026 · Stateless · No images stored</span>
         <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>Five signals · One verdict</span>
       </footer>
     </main>

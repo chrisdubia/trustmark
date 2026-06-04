@@ -3,18 +3,18 @@ import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TrustMark — Verify Media Authenticity",
+  title: "Trustmarc — Verify Media Authenticity",
   description:
     "Instantly verify whether any image, video, or document is real, edited, or AI-generated. Check provenance signatures, EXIF metadata, and AI detection in seconds.",
   keywords: ["deepfake detection", "image verification", "C2PA", "media authenticity", "AI detection"],
   openGraph: {
-    title: "TrustMark — Verify Media Authenticity",
+    title: "Trustmarc — Verify Media Authenticity",
     description: "Know in seconds if an image is real, edited, or AI-generated.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "TrustMark",
+    title: "Trustmarc",
     description: "Verify any image's authenticity in seconds.",
   },
 };

@@ -59,7 +59,7 @@ export async function checkAndRecordHash(
 
       if (existing.verdict === "SYNTHETIC" || existing.verdict === "MODIFIED") {
         knownFakeFlag = true;
-        knownFakeMessage = `This exact file was previously submitted to TrustMark and flagged as ${existing.verdict.toLowerCase()} on ${formatDate(existing.firstSeenAt)}.`;
+        knownFakeMessage = `This exact file was previously submitted to Trustmarc and flagged as ${existing.verdict.toLowerCase()} on ${formatDate(existing.firstSeenAt)}.`;
       }
 
       // Update record

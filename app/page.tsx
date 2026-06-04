@@ -151,7 +151,7 @@ export default function Home() {
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             color: "#1C1C1A",
-          }}>TRUSTMARK</span>
+          }}>TRUSTMARC</span>
         </div>
         <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
           {([["How it works", "/how-it-works"], ["API", "/api"], ["Status", "/status"]] as [string, string][]).map(([label, href]) => (
@@ -463,7 +463,7 @@ export default function Home() {
         alignItems: "center",
       }}>
         <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#C0BDB6" }}>
-          TrustMark · Stateless · Privacy-first
+          Trustmarc · Stateless · Privacy-first
         </span>
         <span style={{ fontFamily: "'DM Mono', monospace", fontSize: 9, color: "#C0BDB6" }}>
           No images stored · Ever

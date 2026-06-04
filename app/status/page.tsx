@@ -58,7 +58,7 @@ function navHeader(activePage: string) {
           letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: "#1C1C1A",
-        }}>TRUSTMARK</span>
+        }}>TRUSTMARC</span>
       </a>
       <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
         {([["How it works", "/how-it-works"], ["API", "/api"], ["Status", "/status"]] as [string, string][]).map(([label, href]) => (
@@ -89,7 +89,7 @@ async function pingService(url: string, timeout = 8000): Promise<{ ok: boolean; 
 
 export default function StatusPage() {
   const [services, setServices] = useState<ServiceResult[]>([
-    { name: "TrustMark API", description: "Core verification endpoint", status: "checking", latency: null },
+    { name: "Trustmarc API", description: "Core verification endpoint", status: "checking", latency: null },
     { name: "Hive AI Detection", description: "AI generation scoring", status: "checking", latency: null },
     { name: "C2PA Verification", description: "Provenance signature checks", status: "checking", latency: null },
     { name: "EXIF Processing", description: "Metadata extraction", status: "checking", latency: null },
@@ -105,7 +105,7 @@ export default function StatusPage() {
     // Reset to checking state
     setServices((prev) => prev.map((s) => ({ ...s, status: "checking" as ServiceStatus, latency: null })));
 
-    // 1. TrustMark API — ping /api/health
+    // 1. Trustmarc API — ping /api/health
     const api = await pingService("/api/health");
     let hiveConfigured = false;
     if (api.ok) {
@@ -357,7 +357,7 @@ export default function StatusPage() {
         justifyContent: "space-between",
       }}>
         <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>
-          TrustMark · 2026 · Stateless · No images stored
+          Trustmarc · 2026 · Stateless · No images stored
         </span>
         <span style={{ ...mono, fontSize: 9, color: "#C0BDB6", letterSpacing: "0.08em", textTransform: "uppercase" }}>
           Auto-refreshes every 30 seconds

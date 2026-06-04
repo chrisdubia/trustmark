@@ -25,5 +25,5 @@ export async function generateCertificatePDF(
   });
 
   pdf.addImage(imgData, "PNG", 0, 0, pageW, pageH);
-  pdf.save(`trustmark-${certId}-${filename}.pdf`);
+  pdf.save(`trustmarc-${certId}-${filename}.pdf`);
 }

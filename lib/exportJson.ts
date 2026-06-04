@@ -10,11 +10,11 @@ export function exportVerificationJSON(result: VerificationResult): void {
   const certId = `TM-${new Date().getFullYear()}-${result.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
 
   const exportData = {
-    trustmark: {
+    trustmarc: {
       version: "1.0",
       exportedAt: new Date().toISOString(),
       certificateId: certId,
-      verificationUrl: `https://trustmark.io/verify/${result.id}`,
+      verificationUrl: `https://trustmarc.io/verify/${result.id}`,
     },
     verdict: {
       result: result.verdict,
@@ -78,7 +78,7 @@ export function exportVerificationJSON(result: VerificationResult): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `trustmark-${certId}-${result.fileInfo.name}.json`;
+  a.download = `trustmarc-${certId}-${result.fileInfo.name}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

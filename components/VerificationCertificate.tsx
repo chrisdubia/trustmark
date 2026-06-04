@@ -108,7 +108,7 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
 
   const verdictColor = VERDICT_COLOR[verdict] ?? "#B85050";
   const certId = `TM-${new Date().getFullYear()}-${verificationId.replace(/-/g, "").slice(0, 8).toUpperCase()}`;
-  const verifyUrl = `https://trustmark.io/verify/${verificationId}`;
+  const verifyUrl = `https://trustmarc.io/verify/${verificationId}`;
   const { date: verifiedDate, time: verifiedTime } = formatVerifiedAt(verifiedAt);
 
   const aiColor = aiProbability > 60 ? "#B85050" : aiProbability > 20 ? "#C4882A" : "#6B8F4E";
@@ -132,9 +132,9 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
                 <div style={{ width: 16, height: 16, borderRadius: "50%", border: "1px solid #1C1C1A", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <svg width="7" height="7" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="#1C1C1A" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </div>
-                Trustmark
+                TRUSTMARC
               </div>
-              <div style={{ ...mono, fontSize: 9, color: "#B0ADA6", letterSpacing: "0.08em" }}>Media Authenticity Certificate · trustmark.io</div>
+              <div style={{ ...mono, fontSize: 9, color: "#B0ADA6", letterSpacing: "0.08em" }}>Media Authenticity Certificate · trustmarc.io</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", marginBottom: 3 }}>Certificate ID</div>
@@ -150,7 +150,7 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           <div style={{ padding: "14px 28px", borderBottom: "1px solid #D8D5CE", background: "#FAFAF8" }}>
             <div style={{ ...mono, fontSize: 8, letterSpacing: "0.16em", textTransform: "uppercase", color: "#B0ADA6", marginBottom: 5 }}>Certification statement</div>
             <div style={{ ...epilogue, fontSize: 11, fontWeight: 300, color: "#5A5855", lineHeight: 1.75 }}>
-              This document certifies that the file identified herein was independently analyzed by TrustMark&apos;s stateless verification system on {verifiedDate} at {verifiedTime} EST. Five independent forensic signals were applied. No file content was retained following analysis. The findings below constitute the complete and unaltered results of that examination.
+              This document certifies that the file identified herein was independently analyzed by Trustmarc&apos;s stateless verification system on {verifiedDate} at {verifiedTime} EST. Five independent forensic signals were applied. No file content was retained following analysis. The findings below constitute the complete and unaltered results of that examination.
             </div>
           </div>
 
@@ -237,7 +237,7 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           <div style={{ padding: "12px 28px", background: "#FAFAF8", borderBottom: "1px solid #D8D5CE" }}>
             <div style={{ ...mono, fontSize: 8, letterSpacing: "0.14em", textTransform: "uppercase", color: "#B0ADA6", marginBottom: 4 }}>Limitations and disclaimer</div>
             <div style={{ ...mono, fontSize: 9, color: "#A8A59E", letterSpacing: "0.03em", lineHeight: 1.65 }}>
-              This certificate reflects the forensic state of the submitted file at the time of analysis. TrustMark makes no representation as to the original source, intent, or downstream use of the content. AI detection models carry an inherent margin of error. A Synthetic verdict indicates high probability of AI generation based on available signals — it does not constitute a legal determination. This certificate should be considered one component of a broader evidentiary or editorial review process.
+              This certificate reflects the forensic state of the submitted file at the time of analysis. Trustmarc makes no representation as to the original source, intent, or downstream use of the content. AI detection models carry an inherent margin of error. A Synthetic verdict indicates high probability of AI generation based on available signals — it does not constitute a legal determination. This certificate should be considered one component of a broader evidentiary or editorial review process.
             </div>
           </div>
 
@@ -249,14 +249,14 @@ const VerificationCertificate = React.forwardRef<HTMLDivElement, CertificateProp
           <div style={{ padding: "14px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FAFAF8" }}>
             <div>
               <div style={{ ...mono, fontSize: 9, color: "#4A7A9B", letterSpacing: "0.05em", marginBottom: 3 }}>{verifyUrl}</div>
-              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em", marginBottom: 2 }}>Generated {verifiedDate} · EST · Stateless · No images stored · TrustMark Phase 1</div>
-              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em" }}>Machine-readable JSON export available at trustmark.io</div>
+              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em", marginBottom: 2 }}>Generated {verifiedDate} · EST · Stateless · No images stored · Trustmarc Phase 1</div>
+              <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.05em" }}>Machine-readable JSON export available at trustmarc.io</div>
             </div>
             <div style={{ ...mono, fontSize: 8, color: "#C0BDB6", letterSpacing: "0.1em", textTransform: "uppercase" }}>Page 1 of 1</div>
             <div style={{ width: 56, height: 56, border: "1px solid #C8C5BE", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, flexShrink: 0 }}>
               <div style={{ ...mono, fontSize: 6, letterSpacing: "0.08em", textTransform: "uppercase", color: "#B0ADA6", textAlign: "center", lineHeight: 1.3 }}>Verified by</div>
               <div style={{ ...mono, fontSize: 8, color: "#1C1C1A", letterSpacing: "0.1em", textAlign: "center" }}>TM·2026</div>
-              <div style={{ ...mono, fontSize: 6, letterSpacing: "0.06em", color: "#C0BDB6", textAlign: "center" }}>TRUSTMARK</div>
+              <div style={{ ...mono, fontSize: 6, letterSpacing: "0.06em", color: "#C0BDB6", textAlign: "center" }}>TRUSTMARC</div>
             </div>
           </div>
 
