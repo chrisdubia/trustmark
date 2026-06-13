@@ -65,8 +65,9 @@ export function deriveVerdict(
     if (exif?.make || exif?.dateTimeOriginal) {
       return { verdict: "VERIFIED", confidence: 72 };
     }
-    // No camera metadata at all — content is real but origin unverifiable
-    return { verdict: "UNKNOWN", confidence: 45 };
+    // No camera metadata at all — Hive is confident it's real but origin is unverifiable
+    // Return low-confidence VERIFIED rather than UNKNOWN — Hive's signal is meaningful
+    return { verdict: "VERIFIED", confidence: 58 };
   }
 
   // Editing software without Hive confirmation

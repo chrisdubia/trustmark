@@ -88,16 +88,26 @@ export default function Home() {
       return;
     }
 
-    // Extract EXIF from original file BEFORE canvas compression strips all metadata
+    // Extract EXIF from original file BEFORE canvas compression strips all metadata.
+    // On iOS Safari, parsing a File directly can fail — fall back to ArrayBuffer.
     let clientExif: Record<string, unknown> | null = null;
     if (file.type.startsWith("image/")) {
       try {
         const exifr = (await import("exifr")).default;
-        clientExif = await exifr.parse(file, {
-          tiff: true, xmp: false, icc: false, iptc: false,
-          gps: true, translateKeys: true, translateValues: true, reviveValues: true,
-        }) ?? null;
-      } catch { /* ignore — server will attempt extraction from dataUrl */ }
+        const opts = { tiff: true, xmp: false, icc: false, iptc: false, gps: true, translateKeys: true, translateValues: true, reviveValues: true };
+        clientExif = await exifr.parse(file, opts) ?? null;
+        // iOS Safari fallback: try ArrayBuffer if File parse returned nothing useful
+        if (!clientExif || Object.keys(clientExif).length === 0) {
+          const buf = await file.arrayBuffer();
+          clientExif = await exifr.parse(buf, opts) ?? null;
+        }
+      } catch {
+        try {
+          const exifr = (await import("exifr")).default;
+          const buf = await file.arrayBuffer();
+          clientExif = await exifr.parse(buf, { tiff: true, gps: true, translateKeys: true, translateValues: true, reviveValues: true }) ?? null;
+        } catch { /* ignore */ }
+      }
     }
 
     // Show preview for images only
